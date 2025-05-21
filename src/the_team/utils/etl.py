@@ -8,6 +8,9 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
 from typing import Optional, Union
+import logging
+# Set up logging
+logging.basicConfig(level=logging.INFO, format='%(levelname)s - %(message)s')
     
 def load_csv(file_path: Path) -> pd.DataFrame:
     """
@@ -48,28 +51,28 @@ def null_duplicate_check(df: pd.DataFrame, col: Optional[list[str]] = None) -> N
     """
     # Check for null values
     if df.isnull().values.any():
-        print("Null values found.")
+        logging.warning("Null values found.")
         # Count the number of rows with any null values
         # and calculate the percentage of such rows
         rows_with_any_null = df.isnull().any(axis=1).sum()
         null_rows_percent = (rows_with_any_null / len(df)) * 100
-        print(f"{null_rows_percent:.2f}% or {rows_with_any_null} rows have 1 or more null values.")
-        print("Null value counts per column:")
-        print(df.isnull().sum())
+        logging.info(f"{null_rows_percent:.2f}% or {rows_with_any_null} rows have 1 or more null values.")
+        logging.info("Null value counts per column:")
+        logging.info(df.isnull().sum())
     else:
         print("No null values found.")
     
     # Check for duplicates
     if df.duplicated().any():
-        print("Duplicates found.")
+        logging.warning("Duplicates found.")
         # Count the number of complete duplicate rows
         # and calculate the percentage of such rows
         total_dupli = df.duplicated(subset=col).sum()
         dupli_percentage = (total_dupli / len(df)) * 100
-        print(f"{dupli_percentage:.2f}% or {total_dupli} rows are complete duplicates.")
-        print(df[df.duplicated(keep=False)])  # Show all duplicates
+        logging.info(f"{dupli_percentage:.2f}% or {total_dupli} rows are complete duplicates.")
+        logging.info(df[df.duplicated(keep=False)])  # Show all duplicates
     else:
-        print("No duplicates found.")
+        logging.info("No duplicates found.")
         
 def set_plot_style() -> None:
     """
@@ -98,7 +101,7 @@ def set_plot_style() -> None:
     }
     sns.set_theme(palette="husl", rc=plot_style_dict)
     plt.rcParams.update(plot_style_dict)
-    print("Custom plot style set.")
+    logging.info("Custom plot style set.")
     
 def plot_numeric_distribution(df: pd.DataFrame) -> None:
     """
@@ -106,7 +109,6 @@ def plot_numeric_distribution(df: pd.DataFrame) -> None:
     
     Args:
         df (pd.DataFrame): DataFrame containing the data.
-        column (str): Column name to plot.
         
     Returns:
         None
@@ -114,6 +116,11 @@ def plot_numeric_distribution(df: pd.DataFrame) -> None:
     # Select numeric columns only
     numeric_cols = df.select_dtypes(include=[np.number]).columns
     n = len(numeric_cols)
+    
+    # Check if there are no numeric columns
+    if n == 0:
+        print("No numeric columns found in the DataFrame. Skipping plot.")
+        return
 
     # Create subplots: one column, multiple rows
     fig, axes = plt.subplots(n, 1, figsize=(12, 2.5 * n), sharey=True)
@@ -183,3 +190,16 @@ def cap_outliers(col: pd.Series,
     capped_series = col.clip(lower=min_val, upper=max_val)
 
     return capped_series
+
+def to_datetime(col: pd.Series, format:str="%Y-%m-%d %H:%M:%S") -> pd.Series:
+    """
+    Convert specified columns in the DataFrame to datetime format.
+    
+    Args:
+        col (pd.Series): Column to convert.
+        format (str): Format string for datetime conversion. Default is "%Y-%m-%d %H:%M:%S".
+        
+    Returns:
+        pd.Series: Series with converted columns.
+    """
+    return pd.to_datetime(col, format=format, errors='coerce')
