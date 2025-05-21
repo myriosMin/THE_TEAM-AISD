@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
 from typing import Optional, Union
+from unidecode import unidecode
     
 def load_csv(file_path: Path) -> pd.DataFrame:
     """
@@ -183,3 +184,119 @@ def cap_outliers(col: pd.Series,
     capped_series = col.clip(lower=min_val, upper=max_val)
 
     return capped_series
+
+def clean_location_columns(df: pd.DataFrame, zip_col: str, city_col: str, state_col: str) -> pd.DataFrame:  # gonna use when cleaning
+    """
+    Standardize zip code, city, and state columns for consistency in merging, grouping, and filtering.
+
+    This function is reusable across datasets that share location-based structure, such as:
+    - customers
+    - geolocation
+    - sellers
+
+    Args:
+        df (pd.DataFrame): The DataFrame to clean.
+        zip_col (str): Name of the zip prefix column.
+        city_col (str): Name of the city column.
+        state_col (str): Name of the state column.
+
+    Returns:
+        pd.DataFrame: Cleaned dataframe with standardized location fields.
+    """
+    # 1. Convert zip prefix to string and remove whitespace
+    df[zip_col] = df[zip_col].astype(str).str.strip()
+    assert df[zip_col].dtype == "object", f"{zip_col} should be string"
+
+    # 2. Normalize city names: lowercase, stripped, and accent-removed
+    df[city_col] = df[city_col].str.lower().str.strip().apply(unidecode)
+
+    # 3. Standardize state codes: uppercase and stripped
+    df[state_col] = df[state_col].str.upper().str.strip()
+
+    return df
+
+def format_customers(customers: pd.DataFrame) -> pd.DataFrame:  # gonna use when cleaning
+    """
+    Format and standardize the customers dataset.
+
+    This builds on location cleaning by also:
+    - Ensuring string consistency in hashed customer ID fields
+    - Supporting reliable merges and indexing later
+
+    Args:
+        customers (pd.DataFrame): Raw customer data.
+
+    Returns:
+        pd.DataFrame: Fully cleaned customer data ready for EDA.
+    """
+
+    # 1. Apply shared location cleaning logic (zip, city, state)
+    customers = clean_location_columns(customers, "customer_zip_code_prefix", "customer_city", "customer_state")
+
+    # 2. Clean hashed ID fields: convert to string and remove hidden whitespace
+    customers["customer_id"] = customers["customer_id"].astype(str).str.strip()
+    customers["customer_unique_id"] = customers["customer_unique_id"].astype(str).str.strip()
+
+    return customers
+
+def format_geolocation(geolocation: pd.DataFrame) -> pd.DataFrame:  # gonna use when cleaning
+    """
+    Format, standardize, and aggregate the geolocation dataset.
+
+    This includes:
+    - Standardizing zip prefix, city, and state for consistent merging
+    - Aggregating to one average latitude/longitude per zip prefix
+
+    Args:
+        geolocation (pd.DataFrame): Raw geolocation data.
+
+    Returns:
+        pd.DataFrame: Aggregated dataset with one row per zip prefix and averaged coordinates.
+    """
+
+    # Step 1: Standardize text formatting for zip, city, and state
+    geolocation = clean_location_columns(
+        geolocation,
+        zip_col="geolocation_zip_code_prefix",
+        city_col="geolocation_city",
+        state_col="geolocation_state"
+    )
+
+    # Step 2: Drop fully duplicated rows to avoid skewing averages
+    geolocation = geolocation.drop_duplicates()
+
+    # Step 3: Aggregate to average lat/lng per zip code prefix
+    geo_prefix = (
+        geolocation.groupby("geolocation_zip_code_prefix")[["geolocation_lat", "geolocation_lng"]]
+        .mean()
+        .reset_index()
+    )
+
+    return geo_prefix
+
+def format_sellers(sellers: pd.DataFrame) -> pd.DataFrame:  # gonna use when cleaning
+    """
+    Format and standardize the sellers dataset.
+
+    This function applies general location standardization and ensures
+    the seller ID is string-cleaned for reliable merging or grouping.
+
+    Args:
+        sellers (pd.DataFrame): Raw seller dataset.
+
+    Returns:
+        pd.DataFrame: Cleaned sellers dataset.
+    """
+
+    # Step 1: Apply shared location cleaning (zip, city, state)
+    sellers = clean_location_columns(
+        sellers,
+        zip_col="seller_zip_code_prefix",
+        city_col="seller_city",
+        state_col="seller_state"
+    )
+
+    # Step 2: Clean seller_id (convert to string, remove whitespace)
+    sellers["seller_id"] = sellers["seller_id"].astype(str).str.strip()
+
+    return sellers
