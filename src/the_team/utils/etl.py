@@ -73,82 +73,7 @@ def null_duplicate_check(df: pd.DataFrame, col: Optional[list[str]] = None) -> N
         logging.info(df[df.duplicated(keep=False)])  # Show all duplicates
     else:
         logging.info("No duplicates found.")
-        
-def set_plot_style() -> None:
-    """
-    Set the plot style for consistent visualizations.
     
-    Args:
-        None
-    Returns:
-        None
-    """
-    plot_style_dict = {
-        'font.family': ['Arial', 'Helvetica', 'sans-serif'],
-        'font.sans-serif': ['Arial', 'Helvetica', 'sans-serif'],
-        'axes.facecolor': '#f2f0e8',
-        'axes.edgecolor': 'black',
-        'axes.labelcolor': '#011547',
-        'axes.labelsize': 12,
-        'axes.labelweight': 'bold',
-        'axes.titlesize': 14,
-        'axes.titleweight': 'bold',
-        'axes.titlepad': 15,
-        'text.color': '#011547',
-        'xtick.color': '#011547',
-        'ytick.color': '#011547',
-        'figure.figsize': (10, 6),
-    }
-    sns.set_theme(palette="husl", rc=plot_style_dict)
-    plt.rcParams.update(plot_style_dict)
-    logging.info("Custom plot style set.")
-    
-def plot_numeric_distribution(df: pd.DataFrame) -> None:
-    """
-    Plot the distribution of all numeric columns in the DataFrame.
-    
-    Args:
-        df (pd.DataFrame): DataFrame containing the data.
-        
-    Returns:
-        None
-    """
-    # Select numeric columns only
-    numeric_cols = df.select_dtypes(include=[np.number]).columns
-    n = len(numeric_cols)
-    
-    # Check if there are no numeric columns
-    if n == 0:
-        print("No numeric columns found in the DataFrame. Skipping plot.")
-        return
-
-    # Create subplots: one column, multiple rows
-    fig, axes = plt.subplots(n, 1, figsize=(12, 2.5 * n), sharey=True)
-
-    # Ensure axes is iterable
-    if n == 1:
-        axes = [axes]
-
-    # Plot with shared y-axis but individual x-axis for readability in different scales
-    for i, col in enumerate(numeric_cols):
-        sns.boxplot(x=df[col], ax=axes[i], orient='h')
-        # Add vertical lines for 1st and 99th percentiles
-        p1 = df[col].quantile(0.01)
-        p99 = df[col].quantile(0.99)
-        axes[i].axvline(p1, color='red', linestyle='--', label='1st percentile')
-        axes[i].axvline(p99, color='green', linestyle='--', label='99th percentile')
-        
-        axes[i].set_title(f"{col}", loc='left', fontsize=12, fontweight='bold', color='#011547')
-        axes[i].set_xlabel("")  
-        axes[i].set_ylabel("")  
-        axes[i].legend(loc='lower right', ncol=2, fontsize=10, frameon=False)
-
-    # Shared xlabel and title
-    fig.suptitle("Boxplot of Numeric Columns", fontsize=14, fontweight='bold', color='#011547')
-    fig.supxlabel("Value", fontsize=12, fontweight='bold', color='#011547')
-
-    plt.tight_layout()
-    plt.show()
 
 def cap_outliers(col: pd.Series,  
                  min_cap: Union[float, bool, None] = None,
@@ -203,3 +128,20 @@ def to_datetime(col: pd.Series, format:str="%Y-%m-%d %H:%M:%S") -> pd.Series:
         pd.Series: Series with converted columns.
     """
     return pd.to_datetime(col, format=format, errors='coerce')
+
+def clip_datetime(col: pd.Series, start_year:int = 2016, end_year:int = 2018) -> pd.Series:
+    """
+    Filter a datetime Series to only include rows where the year is within the given range (inclusive).
+
+    Args:
+        col (pd.Series): Series of datetime values.
+        start_year (int): Start year (inclusive).
+        end_year (int): End year (inclusive).
+
+    Returns:
+        pd.Series: Filtered Series with only the specified year range.
+    """
+    if not pd.api.types.is_datetime64_any_dtype(col):
+        col = to_datetime(col)
+    mask = (col.dt.year >= start_year) & (col.dt.year <= end_year)
+    return col[mask]
