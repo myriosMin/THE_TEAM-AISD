@@ -5,7 +5,8 @@ import seaborn as sns
 import numpy as np
 import pandas as pd
 import logging
-from typing import Optional, Union
+from datetime import timedelta
+from typing import Optional, Tuple
 
 def set_plot_style() -> None:
     """
@@ -94,7 +95,6 @@ def plot_categorical_distribution(df: pd.DataFrame, column: str, title: Optional
     Returns:
         None
     """
-    plt.figure(figsize=(10, 6))
     # Convert column to string type for consistent plotting
     df[column] = df[column].astype(str)
     # Sort categories for consistent visual order
@@ -122,3 +122,55 @@ def plot_categorical_distribution(df: pd.DataFrame, column: str, title: Optional
 
     plt.tight_layout()
     plt.show()
+
+def plot_duration_distribution(df: pd.DataFrame, column_x: str, column_y: str, title: Optional[str] = None) ->  Tuple[timedelta, timedelta, timedelta]:
+    """
+    Plot the distribution of duration between two datetime columns.
+    Args:
+        df (pd.DataFrame): DataFrame containing the data.
+        column_x (str): Column name for start datetime.
+        column_y (str): Column name for end datetime.
+        title (Optional[str]): Title of the plot.
+    Returns:
+        Tuple[timedelta, timedelta, timedelta]: Mean, median, and mode of the duration.
+    """
+    df = df.copy()  # Avoid modifying the original DataFrame
+    # Ensure both columns are datetime
+    df[column_x] = pd.to_datetime(df[column_x], errors='coerce')
+    df[column_y] = pd.to_datetime(df[column_y], errors='coerce')
+    
+    if df[column_x].isnull().any() or df[column_y].isnull().any():
+        logging.warning("NaN values found in datetime columns. They will be ignored in duration calculation.")
+        
+    # Calculate duration in hours
+    df['duration'] = (df[column_y] - df[column_x]).dt.total_seconds().abs()
+    # Drop rows with NaN duration
+    df = df.dropna(subset=['duration']).copy()
+    # Convert duration to hours
+    df['duration'] = df['duration'] / 3600  # Convert seconds to hours
+    
+    # Plot the distribution
+    sns.histplot(data=df, x='duration', bins=30, kde=True, color='blue', stat='density')
+    
+    # Calculate mean, median, and mode
+    mean = df['duration'].mean()
+    median = df['duration'].median()
+    mode = df['duration'].mode().iloc[0]  # May return multiple; take first
+
+    # Add lines to the plot
+    plt.axvline(mean, color='red', linestyle='--', label='Mean')
+    plt.axvline(median, color='green', linestyle='--', label='Median')
+    plt.axvline(mode, color='orange', linestyle='--', label='Mode')
+    plt.legend()
+
+    plt.title(title if title else f"Duration Distribution between {column_x} and {column_y}")
+    plt.xlabel("Duration (hours)")
+    plt.ylabel("Density")
+    plt.tight_layout()
+    plt.show()
+    
+    return (
+    timedelta(hours=mean),
+    timedelta(hours=median),
+    timedelta(hours=mode)
+    )

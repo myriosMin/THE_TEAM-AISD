@@ -38,13 +38,14 @@ def load_csv(file_path: Path) -> pd.DataFrame:
     # Returns the pandas DataFrame    
     return pd.read_csv(file_path) 
 
-def null_duplicate_check(df: pd.DataFrame, col: Optional[list[str]] = None) -> None:
+def null_duplicate_check(df: pd.DataFrame, col: Optional[list[str]] = None, verbose: Optional[bool] = True) -> None:
     """
     Check for null values and duplicates in the DataFrame.
     
     Args:
         df (pd.DataFrame): DataFrame to check.
         col (list of str, optional): Specific column(s) to check for duplicated values. Defaults to None.
+        verbose (bool, optional): If True, print detailed information. Defaults to True.
         
     Returns:
         None
@@ -57,8 +58,9 @@ def null_duplicate_check(df: pd.DataFrame, col: Optional[list[str]] = None) -> N
         rows_with_any_null = df.isnull().any(axis=1).sum()
         null_rows_percent = (rows_with_any_null / len(df)) * 100
         logging.info(f"{null_rows_percent:.2f}% or {rows_with_any_null} rows have 1 or more null values.")
-        logging.info("Null value counts per column:")
-        logging.info(df.isnull().sum())
+        if verbose:
+            logging.info("Null value counts per column:")
+            logging.info(df.isnull().sum())
     else:
         print("No null values found.")
     
@@ -70,7 +72,8 @@ def null_duplicate_check(df: pd.DataFrame, col: Optional[list[str]] = None) -> N
         total_dupli = df.duplicated(subset=col).sum()
         dupli_percentage = (total_dupli / len(df)) * 100
         logging.info(f"{dupli_percentage:.2f}% or {total_dupli} rows are complete duplicates.")
-        logging.info(df[df.duplicated(keep=False)])  # Show all duplicates
+        if verbose:
+            logging.info(df[df.duplicated(keep=False)])  # Show all duplicates
     else:
         logging.info("No duplicates found.")
     
