@@ -1,35 +1,28 @@
+# Raw datasets
 customers:
-  type: pandas.CSVDataSet
-  filepath: data/01_raw/olist_customers_dataset.csv
-  
+  type: pandas.CSVDataset
+  filepath: data/01_raw/olist_customers_dataset.csv  
 geolocation:
-  type: pandas.CSVDataSet
+  type: pandas.CSVDataset
   filepath: data/01_raw/olist_geolocation_dataset.csv
-
 items:
-  type: pandas.CSVDataSet
+  type: pandas.CSVDataset
   filepath: data/01_raw/olist_order_items_dataset.csv
-
 payments:
-  type: pandas.CSVDataSet
-  filepath: data/01_raw/olist_order_payments_dataset.csv
-    
+  type: pandas.CSVDataset
+  filepath: data/01_raw/olist_order_payments_dataset.csv   
 reviews:
-  type: pandas.CSVDataSet
+  type: pandas.CSVDataset
   filepath: data/01_raw/olist_order_reviews_dataset.csv
-
 orders:
-  type: pandas.CSVDataSet
+  type: pandas.CSVDataset
   filepath: data/01_raw/olist_orders_dataset.csv
-
 products:
-  type: pandas.CSVDataSet
+  type: pandas.CSVDataset
   filepath: data/01_raw/olist_products_dataset.csv
-
 sellers:
-  type: pandas.CSVDataSet
+  type: pandas.CSVDataset
   filepath: data/01_raw/olist_sellers_dataset.csv
-
 translation:
-  type: pandas.CSVDataSet
-  filepath: data/01_raw/product_category_name_translation.csv
+  type: pandas.CSVDataset
+  filepath: data/01_raw/product_category_name_translatio
