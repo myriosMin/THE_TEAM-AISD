@@ -235,6 +235,7 @@ def format_sellers(sellers: pd.DataFrame) -> pd.DataFrame:  # gonna use when cle
     sellers["seller_id"] = sellers["seller_id"].astype(str).str.strip()
 
     return sellers
+
 def to_datetime(col: pd.Series, format:str="%Y-%m-%d %H:%M:%S") -> pd.Series:
     """
     Convert specified columns in the DataFrame to datetime format.

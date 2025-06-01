@@ -1,35 +1,63 @@
+# Raw datasets
 customers:
-  type: pandas.CSVDataSet
-  filepath: data/01_raw/olist_customers_dataset.csv
-  
+  type: pandas.CSVDataset
+  filepath: data/01_raw/olist_customers_dataset.csv  
 geolocation:
-  type: pandas.CSVDataSet
+  type: pandas.CSVDataset
   filepath: data/01_raw/olist_geolocation_dataset.csv
-
 items:
-  type: pandas.CSVDataSet
+  type: pandas.CSVDataset
   filepath: data/01_raw/olist_order_items_dataset.csv
-
 payments:
-  type: pandas.CSVDataSet
-  filepath: data/01_raw/olist_order_payments_dataset.csv
-    
+  type: pandas.CSVDataset
+  filepath: data/01_raw/olist_order_payments_dataset.csv   
 reviews:
-  type: pandas.CSVDataSet
+  type: pandas.CSVDataset
   filepath: data/01_raw/olist_order_reviews_dataset.csv
-
 orders:
-  type: pandas.CSVDataSet
+  type: pandas.CSVDataset
   filepath: data/01_raw/olist_orders_dataset.csv
-
 products:
-  type: pandas.CSVDataSet
+  type: pandas.CSVDataset
   filepath: data/01_raw/olist_products_dataset.csv
-
 sellers:
-  type: pandas.CSVDataSet
+  type: pandas.CSVDataset
   filepath: data/01_raw/olist_sellers_dataset.csv
-
 translation:
-  type: pandas.CSVDataSet
+  type: pandas.CSVDataset
   filepath: data/01_raw/product_category_name_translation.csv
+
+# Intermediate cleaned datasets
+clean_orders:
+  type: pandas.ParquetDataset
+  filepath: data/02_intermediate/clean_orders.parquet
+clean_items:
+  type: pandas.ParquetDataset
+  filepath: data/02_intermediate/clean_items.parquet
+clean_payments:
+  type: pandas.ParquetDataset
+  filepath: data/02_intermediate/clean_payments.parquet
+clean_reviews:
+  type: pandas.ParquetDataset
+  filepath: data/02_intermediate/clean_reviews.parquet
+clean_products:
+  type: pandas.ParquetDataset
+  filepath: data/02_intermediate/clean_products.parquet
+clean_sellers:
+  type: pandas.ParquetDataset
+  filepath: data/02_intermediate/clean_sellers.parquet
+clean_customers:
+  type: pandas.ParquetDataset
+  filepath: data/02_intermediate/clean_customers.parquet
+clean_geolocation:
+  type: pandas.ParquetDataset
+  filepath: data/02_intermediate/clean_geolocation.parquet
+clean_translation:
+  type: pandas.ParquetDataset
+  filepath: data/02_intermediate/clean_translation.parquet
+
+# Final primary datasets
+
+
+# Feature datasets
+
