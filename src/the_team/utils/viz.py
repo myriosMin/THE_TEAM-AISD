@@ -11,9 +11,87 @@ from datashader import reductions
 from PIL import Image
 import geopandas as gpd
 from IPython.display import display
+import logging
+from datetime import timedelta
+from typing import Optional, Tuple
 
+def set_plot_style() -> None:
+    """
+    Set the plot style for consistent visualizations.
+    
+    Args:
+        None
+    Returns:
+        None
+    """
+    plot_style_dict = {
+        'font.family': ['Arial', 'sans-serif'],
+        'font.sans-serif': ['Arial', 'sans-serif'],
+        'axes.facecolor': '#f2f0e8',
+        'axes.edgecolor': 'black',
+        'axes.labelcolor': '#011547',
+        'axes.labelsize': 12,
+        'axes.labelweight': 'bold',
+        'axes.titlesize': 14,
+        'axes.titleweight': 'bold',
+        'axes.titlepad': 15,
+        'text.color': '#011547',
+        'xtick.color': '#011547',
+        'ytick.color': '#011547',
+        'figure.figsize': (10, 6),
+    }
+    sns.set_theme(palette="husl", rc=plot_style_dict)
+    plt.rcParams.update(plot_style_dict)
+    logging.info("Custom plot style set.")
+    
+def plot_numeric_distribution(df: pd.DataFrame) -> None:
+    """
+    Plot the distribution of all numeric columns in the DataFrame.
+    
+    Args:
+        df (pd.DataFrame): DataFrame containing the data.
+        
+    Returns:
+        None
+    """
+    # Select numeric columns only
+    numeric_cols = df.select_dtypes(include=[np.number]).columns
+    n = len(numeric_cols)
+    
+    # Check if there are no numeric columns
+    if n == 0:
+        print("No numeric columns found in the DataFrame. Skipping plot.")
+        return
 
-def plot_categorical_distribution(df: pd.DataFrame, column: str) -> None:
+    # Create subplots: one column, multiple rows
+    fig, axes = plt.subplots(n, 1, figsize=(12, 2.5 * n), sharey=True)
+
+    # Ensure axes is iterable
+    if n == 1:
+        axes = [axes]
+
+    # Plot with shared y-axis but individual x-axis for readability in different scales
+    for i, col in enumerate(numeric_cols):
+        sns.boxplot(x=df[col], ax=axes[i], orient='h')
+        # Add vertical lines for 1st and 99th percentiles
+        p1 = df[col].quantile(0.01)
+        p99 = df[col].quantile(0.99)
+        axes[i].axvline(p1, color='red', linestyle='--', label='1st percentile')
+        axes[i].axvline(p99, color='green', linestyle='--', label='99th percentile')
+        
+        axes[i].set_title(f"{col}", loc='left', fontsize=12, fontweight='bold', color='#011547')
+        axes[i].set_xlabel("")  
+        axes[i].set_ylabel("")  
+        axes[i].legend(loc='lower right', ncol=2, fontsize=10, frameon=False)
+
+    # Shared xlabel and title
+    fig.suptitle("Boxplot of Numeric Columns", fontsize=14, fontweight='bold', color='#011547')
+    fig.supxlabel("Value", fontsize=12, fontweight='bold', color='#011547')
+
+    plt.tight_layout()
+    plt.show()
+    
+def plot_categorical_distribution(df: pd.DataFrame, column: str, title: Optional[str] = None) -> None:
     """
     Plot the distribution of a categorical or discrete numeric column using a count plot.
     
@@ -24,11 +102,12 @@ def plot_categorical_distribution(df: pd.DataFrame, column: str) -> None:
     Returns:
         None
     """
-    plt.figure(figsize=(10, 6))
+    # Convert column to string type for consistent plotting
+    df[column] = df[column].astype(str)
     # Sort categories for consistent visual order
     ordered_vals = sorted(df[column].dropna().unique())
     
-    ax = sns.countplot(data=df, x=column, palette="husl", order=ordered_vals)
+    ax = sns.countplot(data=df, x=column, palette="husl", order=ordered_vals, hue=column, legend=False)
     
     # Add count labels above bars
     for p in ax.patches:
@@ -39,18 +118,15 @@ def plot_categorical_distribution(df: pd.DataFrame, column: str) -> None:
                 (p.get_x() + p.get_width() / 2., p.get_height()),
                 ha='center',
                 va='bottom',
-                fontsize=10,
-                fontweight='bold',
-                color='#011547'
             )
 
-    ax.set_title(f"Distribution of '{column}'", fontsize=14, fontweight='bold', color='#011547')
-    ax.set_xlabel(column.replace("_", " ").title(), fontsize=12, fontweight='bold', color='#011547')
-    ax.set_ylabel("Count", fontsize=12, fontweight='bold', color='#011547')
-    ax.set_facecolor('#f2f0e8')
-    plt.xticks(color='#011547')
-    plt.yticks(color='#011547')
-    plt.grid(axis='y', linestyle='--', alpha=0.6)
+    if title:
+        ax.set_title(title)
+    else:
+        ax.set_title(f"Distribution of '{column}'")
+    ax.set_xlabel(column.replace("_", " ").title())
+    ax.set_ylabel("Count")
+
     plt.tight_layout()
     plt.show()
 
@@ -136,3 +212,54 @@ def plot_datashader_map(df, lat_col, lng_col, shapefile_path, title="Brazil Geol
     ax.axis("off")
     plt.tight_layout()
     plt.show()
+def plot_duration_distribution(df: pd.DataFrame, column_x: str, column_y: str, title: Optional[str] = None) ->  Tuple[timedelta, timedelta, timedelta]:
+    """
+    Plot the distribution of duration between two datetime columns.
+    Args:
+        df (pd.DataFrame): DataFrame containing the data.
+        column_x (str): Column name for start datetime.
+        column_y (str): Column name for end datetime.
+        title (Optional[str]): Title of the plot.
+    Returns:
+        Tuple[timedelta, timedelta, timedelta]: Mean, median, and mode of the duration.
+    """
+    df = df.copy()  # Avoid modifying the original DataFrame
+    # Ensure both columns are datetime
+    df[column_x] = pd.to_datetime(df[column_x], errors='coerce')
+    df[column_y] = pd.to_datetime(df[column_y], errors='coerce')
+    
+    if df[column_x].isnull().any() or df[column_y].isnull().any():
+        logging.warning("NaN values found in datetime columns. They will be ignored in duration calculation.")
+        
+    # Calculate duration in hours
+    df['duration'] = (df[column_y] - df[column_x]).dt.total_seconds().abs()
+    # Drop rows with NaN duration
+    df = df.dropna(subset=['duration']).copy()
+    # Convert duration to hours
+    df['duration'] = df['duration'] / 3600  # Convert seconds to hours
+    
+    # Plot the distribution
+    sns.histplot(data=df, x='duration', bins=30, kde=True, color='blue', stat='density')
+    
+    # Calculate mean, median, and mode
+    mean = df['duration'].mean()
+    median = df['duration'].median()
+    mode = df['duration'].mode().iloc[0]  # May return multiple; take first
+
+    # Add lines to the plot
+    plt.axvline(mean, color='red', linestyle='--', label='Mean')
+    plt.axvline(median, color='green', linestyle='--', label='Median')
+    plt.axvline(mode, color='orange', linestyle='--', label='Mode')
+    plt.legend()
+
+    plt.title(title if title else f"Duration Distribution between {column_x} and {column_y}")
+    plt.xlabel("Duration (hours)")
+    plt.ylabel("Density")
+    plt.tight_layout()
+    plt.show()
+    
+    return (
+    timedelta(hours=mean),
+    timedelta(hours=median),
+    timedelta(hours=mode)
+    )
