@@ -5,6 +5,7 @@ generated using Kedro 0.19.12
 import pandas as pd
 from datetime import datetime
 import numpy as np
+from unidecode import unidecode
 
 def clean_orders_dataset(orders: pd.DataFrame) -> pd.DataFrame:
     """
@@ -89,12 +90,38 @@ def clean_items_dataset(items: pd.DataFrame) -> pd.DataFrame:
 
     return items
 
+def clean_location_columns(df: pd.DataFrame, zip_col: str, city_col: str, state_col: str) -> pd.DataFrame:
+    """
+    Standardize zip code, city, and state columns for consistency in merging, grouping, and filtering.
+
+    Args:
+        df (pd.DataFrame): The DataFrame to clean.
+        zip_col (str): Name of the zip prefix column.
+        city_col (str): Name of the city column.
+        state_col (str): Name of the state column.
+
+    Returns:
+        pd.DataFrame: Cleaned dataframe with standardized location fields.
+    """
+     # Step 1:  Convert zip prefix to string and remove whitespace
+    df[zip_col] = df[zip_col].astype(str).str.strip()
+    assert df[zip_col].dtype == "object", f"{zip_col} should be string"
+    
+    # Step 2:  Normalize city names
+    df[city_col] = df[city_col].str.lower().str.strip().apply(unidecode)
+    
+    # Step 3:  Standardize state codes
+    df[state_col] = df[state_col].str.upper().str.strip()
+    
+    return df
+
+
 def clean_customers_dataset(customers: pd.DataFrame) -> pd.DataFrame:
     """
     Clean the olist_customers dataset with the following steps:
-    1. 
-    2. 
-    3. 
+    1. Convert zip code prefix to string and remove whitespace
+    2. Normalize city names: lowercase, stripped, and accent-removed
+    3. Standardize state codes: uppercase and stripped
 
     Args:
         customers (pd.DataFrame): Raw customers data
@@ -102,21 +129,15 @@ def clean_customers_dataset(customers: pd.DataFrame) -> pd.DataFrame:
     Returns:
         pd.DataFrame: Cleaned customers data
     """
-    # Step 1: 
-
-    # Step 2: 
-    
-    # Step 3: 
-   
-
-    return customers
+    return clean_location_columns(customers, "customer_zip_code_prefix", "customer_city", "customer_state") 
 
 def clean_geolocation_dataset(geolocation: pd.DataFrame) -> pd.DataFrame:
     """
     Clean the olist_geolocation dataset with the following steps:
-    1. 
-    2. 
-    3. 
+    1. Removing outliers in latitude and longitude
+    2. Convert zip code prefix to string and remove whitespace
+    3. Normalize city names: lowercase, stripped, and accent-removed
+    4. Standardize state codes: uppercase and stripped
 
     Args:
         geolocation (pd.DataFrame): Raw geolocation data
@@ -124,14 +145,18 @@ def clean_geolocation_dataset(geolocation: pd.DataFrame) -> pd.DataFrame:
     Returns:
         pd.DataFrame: Cleaned geolocation data
     """
-    # Step 1: 
+    # Step 1: Remove outliers in latitude and longitude
+    valid_lat_range = (-33.75116944, 5.27438888)
+    valid_lng_range = (-73.98283055, -34.79314722)
 
-    # Step 2: 
+    geolocation = geolocation[
+    (geolocation["geolocation_lat"].between(*valid_lat_range)) &
+    (geolocation["geolocation_lng"].between(*valid_lng_range))
+]
+
+    return clean_location_columns(geolocation, "geolocation_zip_code_prefix", "geolocation_city", "geolocation_state")
+
     
-    # Step 3: 
-   
-
-    return geolocation
 
 def clean_payments_dataset(payments: pd.DataFrame) -> pd.DataFrame:
     """
@@ -202,9 +227,9 @@ def clean_products_dataset(products: pd.DataFrame) -> pd.DataFrame:
 def clean_sellers_dataset(sellers: pd.DataFrame) -> pd.DataFrame:
     """
     Clean the olist_sellers dataset with the following steps:
-    1. 
-    2. 
-    3. 
+    1. Convert zip code prefix to string and remove whitespace
+    2. Normalize city names: lowercase, stripped, and accent-removed
+    3. Standardize state codes: uppercase and stripped
 
     Args:
         sellers (pd.DataFrame): Raw sellers data
@@ -212,11 +237,4 @@ def clean_sellers_dataset(sellers: pd.DataFrame) -> pd.DataFrame:
     Returns:
         pd.DataFrame: Cleaned sellers data
     """
-    # Step 1: 
-
-    # Step 2: 
-    
-    # Step 3: 
-   
-
-    return sellers
+    return clean_location_columns(sellers, "seller_zip_code_prefix", "seller_city", "seller_state")
