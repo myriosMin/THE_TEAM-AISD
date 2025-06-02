@@ -15,7 +15,7 @@ df_sample = df_full.sample(n=100, random_state=42)
 result_df = add_verified_rating(df_sample)
 
 # Print important columns to console
-print(result_df[["order_id", "review_score", "sentiment", "verified_rating"]])
+print(result_df[["order_id", "review_score", "sentiment", "is_verified"]])
 
 for _, row in result_df.iterrows():
     score = row["review_score"]
@@ -30,3 +30,6 @@ for _, row in result_df.iterrows():
     
     status = "✅" if match else "❌"
     print(f"{status} {score} | {comment}... → {sentiment}")
+
+print(result_df['sentiment'].value_counts(normalize=True))
+
