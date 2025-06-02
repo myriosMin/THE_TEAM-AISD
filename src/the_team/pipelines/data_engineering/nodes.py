@@ -244,38 +244,66 @@ def clean_sellers_dataset(sellers: pd.DataFrame) -> pd.DataFrame:
 
     return sellers
 
-def generate_repeat_customer_labels(clean_customers: pd.DataFrame, clean_orders: pd.DataFrame) -> pd.DataFrame:
+def generate_mega_id_labels(
+    clean_orders: pd.DataFrame,
+    clean_items: pd.DataFrame,
+    clean_customers: pd.DataFrame,
+) -> pd.DataFrame:
     """
-    Generates a customer-level dataset indicating repeat buyers.
-
-    Steps:
-    1. Merge cleaned customers with orders on customer_id
-    2. Count number of orders per customer_unique_id
-    3. Label as repeat if num_orders > 1
+    Creates a centralized dataset keyed by order_id with essential columns and repeat buyer labels.
 
     Args:
-        clean_customers (pd.DataFrame): Cleaned customers data
-        clean_orders (pd.DataFrame): Cleaned orders data
+        clean_orders (pd.DataFrame): Cleaned orders dataset.
+        clean_items (pd.DataFrame): Cleaned order items dataset.
+        clean_customers (pd.DataFrame): Cleaned customers dataset.
 
     Returns:
-        pd.DataFrame: DataFrame with customer_unique_id, num_orders, is_repeat_customer
+        pd.DataFrame: Dataset with one row per order_id and repeat buyer labels.
     """
-    # Step 1: Join to enrich orders with customer_unique_id
-    customers_orders = pd.merge(
-        clean_orders[['order_id', 'customer_id']],
+
+    # Step 1: Merge orders with customer info
+    orders_customers = pd.merge(
+        clean_orders[["order_id", "customer_id"]],
         clean_customers[["customer_id", "customer_unique_id"]],
         on="customer_id",
         how="left"
     )
 
-    # Step 2: Count unique orders per customer
-    customer_order_counts = (
-        customers_orders.groupby("customer_unique_id")
+    # Step 2: Count number of unique orders per customer_unique_id
+    repeat_flags = (
+        orders_customers.groupby("customer_unique_id")
         .agg(num_orders=("order_id", "nunique"))
         .reset_index()
     )
+    repeat_flags["is_repeat_buyer"] = repeat_flags["num_orders"] > 1
 
-    # Step 3: Label repeat customers
-    customer_order_counts["is_repeat_customer"] = customer_order_counts["num_orders"] > 1
+    # Step 3: Merge repeat flag back to each order row
+    labeled_orders = pd.merge(
+        orders_customers,
+        repeat_flags,
+        on="customer_unique_id",
+        how="left"
+    )
 
-    return customer_order_counts
+    # Step 4: Add product_id and seller_id from items (each order_id appears once, use first item)
+    item_refs = clean_items[["order_id", "product_id", "seller_id"]].drop_duplicates("order_id")
+
+    # Final merge
+    mega = pd.merge(
+        labeled_orders,
+        item_refs,
+        on="order_id",
+        how="left"
+    )
+
+    return mega[
+        [
+            "order_id",
+            "customer_id",
+            "customer_unique_id",
+            "product_id",
+            "seller_id",
+            "num_orders",
+            "is_repeat_buyer"
+        ]
+    ]

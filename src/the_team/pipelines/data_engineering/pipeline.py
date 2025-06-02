@@ -57,9 +57,9 @@ def create_pipeline(**kwargs) -> Pipeline:
             name="clean_products_node"
         ),
         node(
-            func=generate_repeat_customer_labels,
-            inputs=["clean_customers", "clean_orders"],
-            outputs="repeat_customers",
-            name="generate_repeat_customer_labels_node"
+            func=generate_mega_id_labels,
+            inputs=["clean_orders", "clean_items", "clean_customers"],
+            outputs="mega_id_labels",
+            name="generate_mega_id_labels_node"
         ),
     ])

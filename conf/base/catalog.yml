@@ -57,9 +57,9 @@ clean_translation:
   filepath: data/02_intermediate/clean_translation.parquet
 
 # Final primary datasets
-repeat_customers:
+mega_id_labels:
   type: pandas.ParquetDataset
-  filepath: data/03_primary/repeat_customers.parquet
+  filepath: data/03_primary/mega_id_labels.parquet
 
 # Feature datasets
 
