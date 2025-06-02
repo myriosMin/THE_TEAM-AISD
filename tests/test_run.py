@@ -1,20 +1,32 @@
-"""
-This module contains example tests for a Kedro project.
-Tests should be placed in ``src/tests``, in modules that mirror your
-project's structure, and in files named test_*.py.
-"""
+import sys
 from pathlib import Path
 
-from kedro.framework.session import KedroSession
-from kedro.framework.startup import bootstrap_project
+# Add '../src' to Python path so imports work
+sys.path.append(str(Path(__file__).resolve().parents[1] / "src"))
 
-# The tests below are here for the demonstration purpose
-# and should be replaced with the ones testing the project
-# functionality
+import pandas as pd
+from the_team.pipelines.feature_engineering.nodes import add_verified_rating
 
-class TestKedroRun:
-    def test_kedro_run(self):
-        bootstrap_project(Path.cwd())
+# Load full dataset and sample 100 rows
+df_full = pd.read_csv("data/01_raw/olist_order_reviews_dataset.csv")
+df_sample = df_full.sample(n=100, random_state=42)
 
-        with KedroSession.create(project_path=Path.cwd()) as session:
-            assert session.run() is not None
+# Run the Kedro node function
+result_df = add_verified_rating(df_sample)
+
+# Print important columns to console
+print(result_df[["order_id", "review_score", "sentiment", "verified_rating"]])
+
+for _, row in result_df.iterrows():
+    score = row["review_score"]
+    sentiment = row["sentiment"]
+    comment = str(row["review_comment_message"])[:50]
+    
+    match = (
+        (sentiment == "positive" and score in [4, 5]) or
+        (sentiment == "neutral" and score == 3) or
+        (sentiment == "negative" and score in [1, 2])
+    )
+    
+    status = "✅" if match else "❌"
+    print(f"{status} {score} | {comment}... → {sentiment}")

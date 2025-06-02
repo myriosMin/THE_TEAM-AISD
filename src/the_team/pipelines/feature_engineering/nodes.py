@@ -9,13 +9,12 @@ from pysentimiento import create_analyzer
 # calling model at module level to ensure it is called once per run
 analyzer = create_analyzer(task="sentiment", lang="pt") # using a portugese model to directly analyze portugese
 
-def map_label(label: str) -> str:
-    """Map model label to sentiment category."""
+def map_sentiment(sentiment_label: str) -> str:
     return {
-        "LABEL_0": "negative",
-        "LABEL_1": "neutral",
-        "LABEL_2": "positive"
-    }.get(label, "neutral")  # default to neutral if unknown, outputs/labels are given in documentation
+        "POS": "positive",
+        "NEU": "neutral",
+        "NEG": "negative"
+    }.get(sentiment_label, "neutral")
 
 def add_verified_rating(reviews: pd.DataFrame) -> pd.DataFrame:
     """
@@ -34,16 +33,21 @@ def add_verified_rating(reviews: pd.DataFrame) -> pd.DataFrame:
     # Ensure inputs are str to ensure model does not choke
     texts = reviews["review_comment_message"].fillna("").astype(str)
 
-    # Model predictions
-    sentiments = texts.apply(lambda t: map_label(analyzer.predict(t).output))
-    reviews["sentiment"] = sentiments
+    def safe_sentiment(text):
+        if not text.strip():
+            return None  # no sentiment if no comment
+        return map_sentiment(analyzer.predict(text).output)
+    
+    # Model predicitons
+    reviews["sentiment"] = texts.apply(safe_sentiment)
 
-     # Compute verified_rating
     def is_verified(row):
-        if pd.isna(row["review_comment_message"]):
-            return False
         sentiment = row["sentiment"]
         score = row["review_score"]
+
+        if sentiment is None:
+            return False  # No comment = no verification
+
         if sentiment == "positive":
             return score in [4, 5]
         elif sentiment == "neutral":
