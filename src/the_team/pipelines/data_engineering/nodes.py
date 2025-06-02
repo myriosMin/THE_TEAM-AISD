@@ -119,9 +119,7 @@ def clean_location_columns(df: pd.DataFrame, zip_col: str, city_col: str, state_
 def clean_customers_dataset(customers: pd.DataFrame) -> pd.DataFrame:
     """
     Clean the olist_customers dataset with the following steps:
-    1. Convert zip code prefix to string and remove whitespace
-    2. Normalize city names: lowercase, stripped, and accent-removed
-    3. Standardize state codes: uppercase and stripped
+    This dataset is already clean, so we will just return it as is.
 
     Args:
         customers (pd.DataFrame): Raw customers data
@@ -129,7 +127,7 @@ def clean_customers_dataset(customers: pd.DataFrame) -> pd.DataFrame:
     Returns:
         pd.DataFrame: Cleaned customers data
     """
-    return clean_location_columns(customers, "customer_zip_code_prefix", "customer_city", "customer_state") 
+    return customers
 
 def clean_geolocation_dataset(geolocation: pd.DataFrame) -> pd.DataFrame:
     """
@@ -237,4 +235,47 @@ def clean_sellers_dataset(sellers: pd.DataFrame) -> pd.DataFrame:
     Returns:
         pd.DataFrame: Cleaned sellers data
     """
-    return clean_location_columns(sellers, "seller_zip_code_prefix", "seller_city", "seller_state")
+    # Step 1: 
+
+    # Step 2: 
+    
+    # Step 3: 
+   
+
+    return sellers
+
+def generate_repeat_customer_labels(clean_customers: pd.DataFrame, clean_orders: pd.DataFrame) -> pd.DataFrame:
+    """
+    Generates a customer-level dataset indicating repeat buyers.
+
+    Steps:
+    1. Merge cleaned customers with orders on customer_id
+    2. Count number of orders per customer_unique_id
+    3. Label as repeat if num_orders > 1
+
+    Args:
+        clean_customers (pd.DataFrame): Cleaned customers data
+        clean_orders (pd.DataFrame): Cleaned orders data
+
+    Returns:
+        pd.DataFrame: DataFrame with customer_unique_id, num_orders, is_repeat_customer
+    """
+    # Step 1: Join to enrich orders with customer_unique_id
+    customers_orders = pd.merge(
+        clean_orders[['order_id', 'customer_id']],
+        clean_customers[["customer_id", "customer_unique_id"]],
+        on="customer_id",
+        how="left"
+    )
+
+    # Step 2: Count unique orders per customer
+    customer_order_counts = (
+        customers_orders.groupby("customer_unique_id")
+        .agg(num_orders=("order_id", "nunique"))
+        .reset_index()
+    )
+
+    # Step 3: Label repeat customers
+    customer_order_counts["is_repeat_customer"] = customer_order_counts["num_orders"] > 1
+
+    return customer_order_counts
