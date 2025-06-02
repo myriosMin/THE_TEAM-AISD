@@ -14,3 +14,4 @@ geopandas>=0.14.0
 datashader>=0.15.2
 setuptools; python_version >= "3.10.16"
 nbstripout>=0.8.1
+haversine>=2.9.0
