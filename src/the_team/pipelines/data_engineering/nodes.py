@@ -5,6 +5,7 @@ generated using Kedro 0.19.12
 import pandas as pd
 from datetime import datetime
 import numpy as np
+from unidecode import unidecode
 
 def clean_orders_dataset(orders: pd.DataFrame) -> pd.DataFrame:
     """
@@ -89,12 +90,36 @@ def clean_items_dataset(items: pd.DataFrame) -> pd.DataFrame:
 
     return items
 
+def clean_location_columns(df: pd.DataFrame, zip_col: str, city_col: str, state_col: str) -> pd.DataFrame:
+    """
+    Standardize zip code, city, and state columns for consistency in merging, grouping, and filtering.
+
+    Args:
+        df (pd.DataFrame): The DataFrame to clean.
+        zip_col (str): Name of the zip prefix column.
+        city_col (str): Name of the city column.
+        state_col (str): Name of the state column.
+
+    Returns:
+        pd.DataFrame: Cleaned dataframe with standardized location fields.
+    """
+     # Step 1:  Convert zip prefix to string and remove whitespace
+    df[zip_col] = df[zip_col].astype(str).str.strip()
+    assert df[zip_col].dtype == "object", f"{zip_col} should be string"
+    
+    # Step 2:  Normalize city names
+    df[city_col] = df[city_col].str.lower().str.strip().apply(unidecode)
+    
+    # Step 3:  Standardize state codes
+    df[state_col] = df[state_col].str.upper().str.strip()
+    
+    return df
+
+
 def clean_customers_dataset(customers: pd.DataFrame) -> pd.DataFrame:
     """
     Clean the olist_customers dataset with the following steps:
-    1. 
-    2. 
-    3. 
+    This dataset is already clean, so we will just return it as is.
 
     Args:
         customers (pd.DataFrame): Raw customers data
@@ -102,21 +127,15 @@ def clean_customers_dataset(customers: pd.DataFrame) -> pd.DataFrame:
     Returns:
         pd.DataFrame: Cleaned customers data
     """
-    # Step 1: 
-
-    # Step 2: 
-    
-    # Step 3: 
-   
-
     return customers
 
 def clean_geolocation_dataset(geolocation: pd.DataFrame) -> pd.DataFrame:
     """
     Clean the olist_geolocation dataset with the following steps:
-    1. 
-    2. 
-    3. 
+    1. Removing outliers in latitude and longitude
+    2. Convert zip code prefix to string and remove whitespace
+    3. Normalize city names: lowercase, stripped, and accent-removed
+    4. Standardize state codes: uppercase and stripped
 
     Args:
         geolocation (pd.DataFrame): Raw geolocation data
@@ -124,14 +143,18 @@ def clean_geolocation_dataset(geolocation: pd.DataFrame) -> pd.DataFrame:
     Returns:
         pd.DataFrame: Cleaned geolocation data
     """
-    # Step 1: 
+    # Step 1: Remove outliers in latitude and longitude
+    valid_lat_range = (-33.75116944, 5.27438888)
+    valid_lng_range = (-73.98283055, -34.79314722)
 
-    # Step 2: 
+    geolocation = geolocation[
+    (geolocation["geolocation_lat"].between(*valid_lat_range)) &
+    (geolocation["geolocation_lng"].between(*valid_lng_range))
+]
+
+    return clean_location_columns(geolocation, "geolocation_zip_code_prefix", "geolocation_city", "geolocation_state")
+
     
-    # Step 3: 
-   
-
-    return geolocation
 
 def clean_payments_dataset(payments: pd.DataFrame) -> pd.DataFrame:
     """
@@ -202,9 +225,9 @@ def clean_products_dataset(products: pd.DataFrame) -> pd.DataFrame:
 def clean_sellers_dataset(sellers: pd.DataFrame) -> pd.DataFrame:
     """
     Clean the olist_sellers dataset with the following steps:
-    1. 
-    2. 
-    3. 
+    1. Convert zip code prefix to string and remove whitespace
+    2. Normalize city names: lowercase, stripped, and accent-removed
+    3. Standardize state codes: uppercase and stripped
 
     Args:
         sellers (pd.DataFrame): Raw sellers data
@@ -220,3 +243,39 @@ def clean_sellers_dataset(sellers: pd.DataFrame) -> pd.DataFrame:
    
 
     return sellers
+
+def generate_repeat_customer_labels(clean_customers: pd.DataFrame, clean_orders: pd.DataFrame) -> pd.DataFrame:
+    """
+    Generates a customer-level dataset indicating repeat buyers.
+
+    Steps:
+    1. Merge cleaned customers with orders on customer_id
+    2. Count number of orders per customer_unique_id
+    3. Label as repeat if num_orders > 1
+
+    Args:
+        clean_customers (pd.DataFrame): Cleaned customers data
+        clean_orders (pd.DataFrame): Cleaned orders data
+
+    Returns:
+        pd.DataFrame: DataFrame with customer_unique_id, num_orders, is_repeat_customer
+    """
+    # Step 1: Join to enrich orders with customer_unique_id
+    customers_orders = pd.merge(
+        clean_orders[['order_id', 'customer_id']],
+        clean_customers[["customer_id", "customer_unique_id"]],
+        on="customer_id",
+        how="left"
+    )
+
+    # Step 2: Count unique orders per customer
+    customer_order_counts = (
+        customers_orders.groupby("customer_unique_id")
+        .agg(num_orders=("order_id", "nunique"))
+        .reset_index()
+    )
+
+    # Step 3: Label repeat customers
+    customer_order_counts["is_repeat_customer"] = customer_order_counts["num_orders"] > 1
+
+    return customer_order_counts
