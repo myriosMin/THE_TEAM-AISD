@@ -127,34 +127,51 @@ def clean_customers_dataset(customers: pd.DataFrame) -> pd.DataFrame:
     Returns:
         pd.DataFrame: Cleaned customers data
     """
-    return customers
+    return clean_location_columns(customers, "customer_zip_code_prefix", "customer_city", "customer_state")
 
 def clean_geolocation_dataset(geolocation: pd.DataFrame) -> pd.DataFrame:
     """
-    Clean the olist_geolocation dataset with the following steps:
-    1. Removing outliers in latitude and longitude
-    2. Convert zip code prefix to string and remove whitespace
-    3. Normalize city names: lowercase, stripped, and accent-removed
-    4. Standardize state codes: uppercase and stripped
+    Clean and format the olist_geolocation dataset:
+    1. Remove lat/lng outliers
+    2. Standardize zip, city, state
+    3. Drop duplicates
+    4. Aggregate to average lat/lng per zip prefix
 
     Args:
         geolocation (pd.DataFrame): Raw geolocation data
 
     Returns:
-        pd.DataFrame: Cleaned geolocation data
+        pd.DataFrame: Aggregated geolocation data (1 row per zip prefix)
     """
-    # Step 1: Remove outliers in latitude and longitude
+    # Step 1: Remove invalid lat/lng rows
     valid_lat_range = (-33.75116944, 5.27438888)
     valid_lng_range = (-73.98283055, -34.79314722)
 
     geolocation = geolocation[
-    (geolocation["geolocation_lat"].between(*valid_lat_range)) &
-    (geolocation["geolocation_lng"].between(*valid_lng_range))
-]
+        (geolocation["geolocation_lat"].between(*valid_lat_range)) &
+        (geolocation["geolocation_lng"].between(*valid_lng_range))
+    ]
 
-    return clean_location_columns(geolocation, "geolocation_zip_code_prefix", "geolocation_city", "geolocation_state")
+    # Step 2: Standardize text formatting
+    geolocation = clean_location_columns(
+        geolocation,
+        zip_col="geolocation_zip_code_prefix",
+        city_col="geolocation_city",
+        state_col="geolocation_state"
+    )
 
-    
+    # Step 3: Remove duplicates
+    geolocation = geolocation.drop_duplicates()
+
+    # Step 4: Aggregate to average lat/lng per zip prefix
+    geolocation = (
+        geolocation
+        .groupby("geolocation_zip_code_prefix")[["geolocation_lat", "geolocation_lng"]]
+        .mean()
+        .reset_index()
+    )
+
+    return geolocation
 
 def clean_payments_dataset(payments: pd.DataFrame) -> pd.DataFrame:
     """
@@ -235,14 +252,8 @@ def clean_sellers_dataset(sellers: pd.DataFrame) -> pd.DataFrame:
     Returns:
         pd.DataFrame: Cleaned sellers data
     """
-    # Step 1: 
 
-    # Step 2: 
-    
-    # Step 3: 
-   
-
-    return sellers
+    return clean_location_columns(sellers, "seller_zip_code_prefix", "seller_city", "seller_state")
 
 def generate_mega_id_labels(
     clean_orders: pd.DataFrame,

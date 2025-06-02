@@ -63,3 +63,10 @@ mega_id_labels:
 
 # Feature datasets
 
+order_distances:
+  type: pandas.ParquetDataset
+  filepath: data/04_feature/order_distances.parquet
+
+distance_seller_stats:
+  type: pandas.ParquetDataset
+  filepath: data/04_feature/distance_seller_stats.parquet
