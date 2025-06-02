@@ -181,9 +181,7 @@ def clean_payments_dataset(payments: pd.DataFrame) -> pd.DataFrame:
 def clean_reviews_dataset(reviews: pd.DataFrame) -> pd.DataFrame:
     """
     Clean the olist_reviews dataset with the following steps:
-    1. 
-    2. 
-    3. 
+    1.  Drops all non essential columns
 
     Args:
         reviews (pd.DataFrame): Raw reviews data
@@ -192,7 +190,7 @@ def clean_reviews_dataset(reviews: pd.DataFrame) -> pd.DataFrame:
         pd.DataFrame: Cleaned reviews data
     """
     # Step 1: 
-
+    reviews.drop(columns=["review_id", "review_comment_title","review_creation_date", "review_answer_timestamp"], inplace=True)
     # Step 2: 
     
     # Step 3: 
