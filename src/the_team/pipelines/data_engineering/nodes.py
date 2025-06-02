@@ -191,19 +191,14 @@ def clean_reviews_dataset(reviews: pd.DataFrame) -> pd.DataFrame:
     """
     # Step 1: 
     reviews.drop(columns=["review_id", "review_comment_title","review_creation_date", "review_answer_timestamp"], inplace=True)
-    # Step 2: 
-    
-    # Step 3: 
-   
 
     return reviews
 
 def clean_products_dataset(products: pd.DataFrame) -> pd.DataFrame:
     """
     Clean the olist_products dataset with the following steps:
-    1. 
-    2. 
-    3. 
+    1. Drops NaN cells
+    2. Changes datatype to be more efficient for certain columns
 
     Args:
         products (pd.DataFrame): Raw products data
@@ -212,11 +207,14 @@ def clean_products_dataset(products: pd.DataFrame) -> pd.DataFrame:
         pd.DataFrame: Cleaned products data
     """
     # Step 1: 
+    products.dropna(inplace=True)
 
     # Step 2: 
-    
-    # Step 3: 
-   
+    products = products.astype({
+    "product_name_lenght": int,
+    "product_description_lenght": int,
+    "product_photos_qty": int
+    })
 
     return products
 
