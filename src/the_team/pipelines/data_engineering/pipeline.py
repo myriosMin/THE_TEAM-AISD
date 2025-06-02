@@ -56,4 +56,10 @@ def create_pipeline(**kwargs) -> Pipeline:
             outputs="clean_products",
             name="clean_products_node"
         ),
+        node(
+            func=generate_repeat_customer_labels,
+            inputs=["clean_customers", "clean_orders"],
+            outputs="repeat_customers",
+            name="generate_repeat_customer_labels_node"
+        ),
     ])
