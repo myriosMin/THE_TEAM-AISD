@@ -10,7 +10,7 @@ def create_pipeline(**kwargs) -> Pipeline:
     return Pipeline([
         node(
             func=add_verified_rating,
-            inputs="raw_reviews",
+            inputs="clean_reviews",
             outputs="reviews_with_verified_rating",
             name="verified_rating_node"
         )
