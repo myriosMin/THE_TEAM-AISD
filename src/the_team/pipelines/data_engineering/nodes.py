@@ -211,8 +211,8 @@ def clean_products_dataset(products: pd.DataFrame) -> pd.DataFrame:
 
     # Step 2: 
     products = products.astype({
-    "product_name_lenght": int,
-    "product_description_lenght": int,
+    "product_name_length": int,
+    "product_description_length": int,
     "product_photos_qty": int
     })
 
