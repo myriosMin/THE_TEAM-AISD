@@ -5,6 +5,14 @@ generated using Kedro 0.19.12
 from haversine import haversine, Unit
 import pandas as pd
 
+def high_density_customer_flag(clean_customers: pd.DataFrame) -> pd.DataFrame:
+    """
+    Flags customers from top 5 most frequent cities as high-density areas.
+    """
+    top_cities = clean_customers["customer_city"].value_counts().nlargest(5).index.tolist()
+    clean_customers["high_density_customer_area"] = clean_customers["customer_city"].isin(top_cities).astype(int)
+    return clean_customers
+
 def compute_seller_buyer_distance(
     clean_items: pd.DataFrame,
     clean_orders: pd.DataFrame,
@@ -25,7 +33,7 @@ def compute_seller_buyer_distance(
     ).rename(columns={
         "geolocation_lat": "customer_lat",
         "geolocation_lng": "customer_lng"
-    })[["customer_id", "customer_lat", "customer_lng"]].dropna()
+    })[["customer_id", "customer_lat", "customer_lng", "high_density_customer_area"]].dropna()
 
     # Step 2: Get seller coordinates
     sellers_loc = pd.merge(
@@ -67,7 +75,7 @@ def compute_seller_buyer_distance(
     order_details["distance_km"] = order_details.apply(compute_distance, axis=1)
 
     # Step 7: Reduce to 1 row per order
-    order_distances = order_details.drop_duplicates("order_id")[["order_id", "distance_km"]]
+    order_distances = order_details.drop_duplicates("order_id")[["order_id", "distance_km", "high_density_customer_area"]]
 
     # Step 8: Merge with base dataset (mega_id_labels)
     df = pd.merge(

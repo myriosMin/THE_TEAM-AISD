@@ -62,6 +62,9 @@ mega_id_labels:
   filepath: data/03_primary/mega_id_labels.parquet
 
 # Feature datasets
+tagged_customers:
+  type: pandas.ParquetDataset
+  filepath: data/04_feature/tagged_customers.parquet
 
 order_distances:
   type: pandas.ParquetDataset

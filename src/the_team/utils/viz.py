@@ -212,6 +212,7 @@ def plot_datashader_map(df, lat_col, lng_col, shapefile_path, title="Brazil Geol
     ax.axis("off")
     plt.tight_layout()
     plt.show()
+    
 def plot_duration_distribution(df: pd.DataFrame, column_x: str, column_y: str, title: Optional[str] = None) ->  Tuple[timedelta, timedelta, timedelta]:
     """
     Plot the distribution of duration between two datetime columns.
