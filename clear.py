@@ -1,5 +1,6 @@
 import nbformat
 from nbformat.validator import normalize
+import logging
 
 paths = ["sketch.ipynb", "eda.ipynb"]
 for path in paths:
@@ -14,4 +15,4 @@ for path in paths:
     with open(path, "w", encoding="utf-8") as f:
         nbformat.write(nb, f)
 
-    logger.info(f"Fixed and saved: {path}")
+    logging.info(f"Fixed and saved: {path}")
