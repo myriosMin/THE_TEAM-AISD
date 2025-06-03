@@ -86,7 +86,7 @@ def compute_seller_buyer_distance(
     return df
 
 
-def calculate_seller_repeat_buyer_rate(order_distances: pd.DataFrame) -> pd.DataFrame:
+def calculate_seller_repeat_buyer_rate(df: pd.DataFrame) -> pd.DataFrame:
     """
     Calculates and adds a seller-level repeat buyer rate feature.
 
@@ -98,7 +98,7 @@ def calculate_seller_repeat_buyer_rate(order_distances: pd.DataFrame) -> pd.Data
     """
     # Step 1: Count repeat buyers per seller
     repeat_buyers = (
-        order_distances[order_distances["is_repeat_buyer"] == True]
+        df[df["is_repeat_buyer"] == True]
         .groupby("seller_id")["customer_unique_id"]
         .nunique()
         .reset_index()
@@ -107,7 +107,7 @@ def calculate_seller_repeat_buyer_rate(order_distances: pd.DataFrame) -> pd.Data
 
     # Step 2: Count total unique buyers per seller
     total_buyers = (
-        order_distances.groupby("seller_id")["customer_unique_id"]
+        df.groupby("seller_id")["customer_unique_id"]
         .nunique()
         .reset_index()
         .rename(columns={"customer_unique_id": "num_unique_buyers"})
@@ -121,6 +121,6 @@ def calculate_seller_repeat_buyer_rate(order_distances: pd.DataFrame) -> pd.Data
     )
 
     # Step 4: Merge this back into main dataset
-    distance_seller_stats = pd.merge(order_distances, seller_repeat_stats[["seller_id", "seller_repeat_buyer_rate"]], on="seller_id", how="left")
+    distance_seller_stats = pd.merge(df, seller_repeat_stats[["seller_id", "seller_repeat_buyer_rate"]], on="seller_id", how="left")
 
     return distance_seller_stats
