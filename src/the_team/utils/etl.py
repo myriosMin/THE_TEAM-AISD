@@ -79,9 +79,7 @@ def null_duplicate_check(df: pd.DataFrame, col: Optional[list[str]] = None, verb
         logging.info("No duplicates found.")
     
 
-import numpy as np
-import pandas as pd
-from typing import Union
+# Removed redundant imports of numpy, pandas, and typing
 
 def cap_outliers(col: pd.Series, min_cap: Union[float, bool, None] = None, max_cap: Union[float, bool, None] = None) -> pd.Series:
     """
