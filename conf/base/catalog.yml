@@ -63,3 +63,6 @@ mega_id_labels:
 
 # Feature datasets
 
+reviews_with_verified_rating:
+  type: pandas.ParquetDataset
+  filepath: data/02_intermediate/reviews_with_verified_rating.parquet # Will go into next node hence intermediary but has features added to it
