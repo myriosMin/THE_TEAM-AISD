@@ -79,45 +79,53 @@ def null_duplicate_check(df: pd.DataFrame, col: Optional[list[str]] = None, verb
         logging.info("No duplicates found.")
     
 
-def cap_outliers(col: pd.Series,  
-                 min_cap: Union[float, bool, None] = None,
-                 max_cap: Union[float, bool, None] = None) -> pd.Series:
+import numpy as np
+import pandas as pd
+from typing import Union
+
+def cap_outliers(col: pd.Series, min_cap: Union[float, bool, None] = None, max_cap: Union[float, bool, None] = None) -> pd.Series:
     """
-    Cap outliers in a specified column of the DataFrame.
-    
+    Cap outliers in a specified Series.
+
     Parameters:
         col (pd.Series): Series to apply capping.
-        min_cap (float or bool): 
-            - If float: use this as the lower cap value.
-            - If True: use 1st percentile as lower cap.
-            - If None or False: no lower capping.
-        max_cap (float or bool): 
-            - If float: use this as the upper cap value.
-            - If True: use 99th percentile as upper cap.
-            - If None or False: no upper capping.
-    
+        min_cap (float or bool or None):
+            - float → use this as lower cap
+            - True  → use 1st percentile as lower cap
+            - False or None → no lower capping
+        max_cap (float or bool or None):
+            - float → use this as upper cap
+            - True  → use 99th percentile as upper cap
+            - False or None → no upper capping
+
     Returns:
-        pd.Series: The capped column as a new Series.
+        pd.Series: The capped Series.
     """
 
-    # Determine cap values
-    if isinstance(min_cap, bool) and min_cap:
-        min_val = col.quantile(0.01)
+    # Determine lower cap
+    if isinstance(min_cap, bool):
+        if min_cap:                         
+            min_val = col.quantile(0.01)
+        else:                               
+            min_val = -np.inf
     elif isinstance(min_cap, (int, float)):
-        min_val = min_cap
+        min_val = float(min_cap)            
     else:
-        min_val = -np.inf
+        min_val = -np.inf                   
 
-    if isinstance(max_cap, bool) and max_cap:
-        max_val = col.quantile(0.99)
+    # Determine upper cap
+    if isinstance(max_cap, bool):
+        if max_cap:                         
+            max_val = col.quantile(0.99)
+        else:                               
+            max_val = np.inf
     elif isinstance(max_cap, (int, float)):
-        max_val = max_cap
+        max_val = float(max_cap)            
     else:
-        max_val = np.inf
+        max_val = np.inf                    
 
-    # Apply capping
+    # Apply capping 
     capped_series = col.clip(lower=min_val, upper=max_val)
-
     return capped_series
 
 def clean_location_columns(df: pd.DataFrame, zip_col: str, city_col: str, state_col: str) -> pd.DataFrame:  # gonna use when cleaning

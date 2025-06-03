@@ -62,4 +62,6 @@ mega_id_labels:
   filepath: data/03_primary/mega_id_labels.parquet
 
 # Feature datasets
-
+transaction_features:
+  type: pandas.ParquetDataset
+  filepath: data/04_feature/transaction_features.parquet
