@@ -25,7 +25,7 @@ def load_csv(file_path: Path) -> pd.DataFrame:
     """
     # Download the file if it does not exist (fixed to Olist dataset from Kaggle for demonstration)
     if not file_path.exists():
-        print(f"File {file_path.name} not found. Downloading from Kaggle...")
+        logging.warning(f"File {file_path.name} not found. Downloading from Kaggle...")
         
         df = kagglehub.load_dataset(
         KaggleDatasetAdapter.PANDAS,
@@ -34,7 +34,7 @@ def load_csv(file_path: Path) -> pd.DataFrame:
         )
 
         df.to_csv(file_path, index=False)
-        print(f"File {file_path.name} downloaded successfully and loaded into {file_path.parent}.")
+        logging.info(f"File {file_path.name} downloaded successfully and loaded into {file_path.parent}.")
         
     # Returns the pandas DataFrame    
     return pd.read_csv(file_path) 
@@ -63,7 +63,7 @@ def null_duplicate_check(df: pd.DataFrame, col: Optional[list[str]] = None, verb
             logging.info("Null value counts per column:")
             logging.info(df.isnull().sum())
     else:
-        print("No null values found.")
+        logging.info("No null values found.")
     
     # Check for duplicates
     if df.duplicated().any():
