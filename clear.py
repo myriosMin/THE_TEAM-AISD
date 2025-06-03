@@ -14,4 +14,4 @@ for path in paths:
     with open(path, "w", encoding="utf-8") as f:
         nbformat.write(nb, f)
 
-    print(f"Fixed and saved: {path}")
+    logger.info(f"Fixed and saved: {path}")
