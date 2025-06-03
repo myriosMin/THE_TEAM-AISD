@@ -38,7 +38,7 @@ def add_verified_rating(reviews: pd.DataFrame) -> pd.DataFrame:
     # Ensure inputs are str to ensure model does not choke
     texts = reviews["review_comment_message"].fillna("").astype(str)
 
-    # Updated sentiment analysis to include more sensetivity to short and positive reviews   
+    # Updated sentiment analysis to include more sensitivity to short and positive reviews   
     def heuristic_sentiment(text: str, model_sentiment: str) -> str:
         text_lower = text.strip().lower()
         words = text_lower.split()
