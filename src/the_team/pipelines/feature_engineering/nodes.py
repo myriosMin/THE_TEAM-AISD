@@ -128,10 +128,16 @@ def create_transaction_features(
     # Return only non-null rows
     return df[base_cols + ratio_cols].dropna()
 
-#  Item/Review Related Nodes
+#  Product/Review Related Nodes
 
 # calling model at module level to ensure it is called once per run
 analyzer = create_analyzer(task="sentiment", lang="pt") # using a portugese model to directly analyze portugese
+
+# Load the model once
+analyzer = create_analyzer(task="sentiment", lang="pt")
+
+# Cache dictionary to avoid redundant predictions
+sentiment_cache = {}
 
 def map_sentiment(sentiment_label: str) -> str:
     return {
@@ -140,68 +146,77 @@ def map_sentiment(sentiment_label: str) -> str:
         "NEG": "negative"
     }.get(sentiment_label, "neutral")
 
+# For falsely identified positives as neutral
+def heuristic_sentiment(text: str, model_sentiment: str) -> str:
+    text_lower = text.strip().lower()
+    words = text_lower.split()
+
+    positive_keywords = {
+        "ótimo", "excelente", "bom", "recomendo", "confiável",
+        "satisfeito", "tranquilo", "correto", "tudo certo", "tudo ok"
+    }
+
+    if model_sentiment == "neutral":
+        for word in positive_keywords:
+            if word in text_lower:
+                return "positive"
+        if len(words) <= 5 and any(p in text_lower for p in ["tudo certo", "tudo ok", "site confiável", "cumpriu", "conforme"]):
+            return "positive"
+
+    return model_sentiment
+
+def analyze_sentiment(text: str) -> str | None:
+    if not text.strip():
+        return None
+    if text in sentiment_cache:
+        return sentiment_cache[text]
+
+    result = analyzer.predict(text)
+    sentiment = heuristic_sentiment(text, map_sentiment(result.output)) # type: ignore
+    sentiment_cache[text] = sentiment
+    return sentiment
+
 def add_verified_rating(reviews: pd.DataFrame) -> pd.DataFrame:
     """
     Adds 'sentiment' and 'is_verified' features using a Portuguese BERT model.
-
-    Rows without review_comment_message are marked is_verified=False.
-
-    Args:
-        df: DataFrame with 'review_comment_message' and 'review_score'
-
-    Returns:
-        DataFrame with 'sentiment' and 'is_verified'
     """
+
     reviews = reviews.copy()
+    reviews["review_comment_message"] = reviews["review_comment_message"].fillna("").astype(str)
 
-    # Ensure inputs are str to ensure model does not choke
-    texts = reviews["review_comment_message"].fillna("").astype(str)
+    # Running sentiment analysis with caching
+    reviews["sentiment"] = reviews["review_comment_message"].apply(analyze_sentiment)
 
-    # Updated sentiment analysis to include more sensitivity to short and positive reviews   
-    def heuristic_sentiment(text: str, model_sentiment: str) -> str:
-        text_lower = text.strip().lower()
-        words = text_lower.split()
-
-        # Reclassify as positive if short but clearly affirmative
-        positive_keywords = {"ótimo", "excelente", "bom", "recomendo", "confiável", "satisfeito", "tranquilo", "correto", "tudo certo", "tudo ok"} # General words translated
-        if model_sentiment == "neutral":
-            for word in positive_keywords:
-                if word in text_lower:
-                    return "positive"
-
-            # Short positive-sounding sentences
-            if len(words) <= 5 and any(w in text_lower for w in ["tudo certo", "tudo ok", "site confiável", "cumpriu", "conforme"]): # General words translated
-                return "positive"
-
-        return model_sentiment
-    
-    # Main logic for analysis
-    def safe_sentiment(text):
-        if not text.strip():
-            return None
-        raw = analyzer.predict(text)
-        return heuristic_sentiment(text, map_sentiment(raw.output)) # type: ignore
-
-    # Model predicitons
-    reviews["sentiment"] = texts.apply(safe_sentiment)
-
+    # Apply matching logic
     def is_verified(row):
         sentiment = row["sentiment"]
         score = row["review_score"]
-
         if sentiment is None:
-            return False  # No comment = no verification
-
-        if sentiment == "positive":
-            return score in [4, 5]
-        elif sentiment == "neutral":
-            return score == 3
-        elif sentiment == "negative":
-            return score in [1, 2]
-        return False
+            return False
+        return (
+            (sentiment == "positive" and score in [4, 5]) or
+            (sentiment == "neutral" and score == 3) or
+            (sentiment == "negative" and score in [1, 2])
+        )
 
     reviews["is_verified"] = reviews.apply(is_verified, axis=1)
     return reviews
 
+def translate_product_categories(products: pd.DataFrame, translation: pd.DataFrame) -> pd.DataFrame:
+    """
+    Replaces 'product_category_name' with its English translation using a lookup table (translation dataset).
 
-def final
+    Parameters:
+        products (pd.DataFrame): Products data with 'product_category_name'.
+        translation (pd.DataFrame): Mapping table with Portuguese and English names.
+
+    Returns:
+        pd.DataFrame: Same DataFrame with 'product_category_name' replaced in English.
+    """
+    # Create the mapping
+    translation_map = translation.set_index("product_category_name")["product_category_name_english"].to_dict()
+
+    # Replace in place
+    products["product_category_name"] = products["product_category_name"].map(translation_map)
+
+    return products
