@@ -109,14 +109,14 @@ def create_transaction_features(
     )
 
     df = df.merge(installment_info, on="order_id", how="left")
-    df["instalment"] = df["payment_installments"].fillna(0).astype(int)
+    df["installment"] = df["payment_installments"].fillna(0).astype(int)
     df.drop(columns=["payment_installments"], inplace=True)
 
     # Final selection
     base_cols = [
         "order_id", "product_id", "seller_id", "customer_id", "customer_unique_id",
         "deli_duration_exp", "deli_duration_paid", "deli_cost", "free_delivery",
-        "item_price", "high_price", "discount", "is_bulk", "is_repeat_buyer", "instalment"
+        "item_price", "high_price", "discount", "is_bulk", "is_repeat_buyer", "installment"
     ]
     
     # order_id, product_id, customer_id, customer_unique_id will be dropped later before training
