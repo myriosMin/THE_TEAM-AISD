@@ -5,7 +5,7 @@ generated using Kedro 0.19.12
 import pandas as pd
 from datetime import datetime
 import numpy as np
-from unidecode import unidecode
+from unidecode import unidecode # type: ignore
 
 def clean_orders_dataset(orders: pd.DataFrame) -> pd.DataFrame:
     """
@@ -154,14 +154,12 @@ def clean_geolocation_dataset(geolocation: pd.DataFrame) -> pd.DataFrame:
 
     return clean_location_columns(geolocation, "geolocation_zip_code_prefix", "geolocation_city", "geolocation_state")
 
-    
-
 def clean_payments_dataset(payments: pd.DataFrame) -> pd.DataFrame:
     """
     Clean the olist_payments dataset with the following steps:
-    1. 
-    2. 
-    3. 
+    1. Drop rows with 'not_defined' payment_type.
+    2. Clip 'payment_installments' at 99th percentile to handle outliers.
+    3. Drop 'payment_sequential' and 'payment_value' as they're not relevant.
 
     Args:
         payments (pd.DataFrame): Raw payments data
@@ -169,12 +167,16 @@ def clean_payments_dataset(payments: pd.DataFrame) -> pd.DataFrame:
     Returns:
         pd.DataFrame: Cleaned payments data
     """
-    # Step 1: 
 
-    # Step 2: 
-    
-    # Step 3: 
-   
+    # Step 1: Drop 'not_defined' payment types
+    payments = payments[payments["payment_type"] != "not_defined"]
+
+    # Step 2: Clip 'payment_installments' to 99th percentile
+    upper_clip = payments["payment_installments"].quantile(0.99)
+    payments["payment_installments"] = payments["payment_installments"].clip(upper=upper_clip)
+
+    # Step 3: Drop irrelevant columns
+    payments.drop(columns=["payment_sequential"], inplace=True)
 
     return payments
 
@@ -291,6 +293,8 @@ def generate_mega_id_labels(
         on="order_id",
         how="left"
     )
+    # Drop nulls 
+    mega = mega.dropna()
 
     return mega[
         [
