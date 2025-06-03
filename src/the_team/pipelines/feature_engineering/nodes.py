@@ -64,16 +64,13 @@ def compute_seller_buyer_distance(
         subset=["customer_lat", "customer_lng", "seller_lat", "seller_lng"]
     )
 
-    # Step 6: Compute distance using Haversine
-    def compute_distance(row):
-        return haversine(
-            (row["customer_lat"], row["customer_lng"]),
-            (row["seller_lat"], row["seller_lng"]),
-            unit=Unit.KILOMETERS
-        )
-
-    order_details["distance_km"] = order_details.apply(compute_distance, axis=1)
-
+    # Step 6: Compute distance using Haversine in a vectorized manner
+    customer_coords = order_details[["customer_lat", "customer_lng"]].to_numpy()
+    seller_coords = order_details[["seller_lat", "seller_lng"]].to_numpy()
+    order_details["distance_km"] = [
+        haversine(cust, sell, unit=Unit.KILOMETERS)
+        for cust, sell in zip(customer_coords, seller_coords)
+    ]
     # Step 7: Reduce to 1 row per order
     order_distances = order_details.drop_duplicates("order_id")[["order_id", "distance_km", "high_density_customer_area"]]
 
