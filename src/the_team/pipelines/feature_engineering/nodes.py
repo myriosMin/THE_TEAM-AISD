@@ -142,15 +142,15 @@ def map_sentiment(sentiment_label: str) -> str:
 
 def add_verified_rating(reviews: pd.DataFrame) -> pd.DataFrame:
     """
-    Adds 'sentiment' and 'verified_rating' features using a Portuguese BERT model.
+    Adds 'sentiment' and 'is_verified' features using a Portuguese BERT model.
 
-    Rows without review_comment_message are marked verified_rating=False.
+    Rows without review_comment_message are marked is_verified=False.
 
     Args:
         df: DataFrame with 'review_comment_message' and 'review_score'
 
     Returns:
-        DataFrame with 'sentiment' and 'verified_rating'
+        DataFrame with 'sentiment' and 'is_verified'
     """
     reviews = reviews.copy()
 
@@ -180,7 +180,7 @@ def add_verified_rating(reviews: pd.DataFrame) -> pd.DataFrame:
         if not text.strip():
             return None
         raw = analyzer.predict(text)
-        return heuristic_sentiment(text, map_sentiment(raw.output))
+        return heuristic_sentiment(text, map_sentiment(raw.output)) # type: ignore
 
     # Model predicitons
     reviews["sentiment"] = texts.apply(safe_sentiment)
@@ -204,3 +204,4 @@ def add_verified_rating(reviews: pd.DataFrame) -> pd.DataFrame:
     return reviews
 
 
+def final
