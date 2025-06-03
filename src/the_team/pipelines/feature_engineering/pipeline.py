@@ -26,4 +26,21 @@ def create_pipeline(**kwargs) -> Pipeline:
             outputs="distance_seller_stats",
             name="calculate_seller_repeat_buyer_rate_node"
         ),
+        node(
+            func=add_verified_rating,
+            inputs="clean_reviews",
+            outputs="reviews_with_verified_rating",
+            name="verified_rating_node"
+        ),
+        node(
+            func=create_transaction_features,
+            inputs=[
+                "clean_orders",
+                "clean_items",
+                "clean_payments",
+                "mega_id_labels"
+            ],
+            outputs="transaction_features",
+            name="create_transaction_features_node"
+        ),
     ])

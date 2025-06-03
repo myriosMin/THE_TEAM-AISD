@@ -62,14 +62,18 @@ mega_id_labels:
   filepath: data/03_primary/mega_id_labels.parquet
 
 # Feature datasets
-tagged_customers:
+transaction_features:
+  type: pandas.ParquetDataset
+  filepath: data/04_feature/transaction_features.parquet
+reviews_with_verified_rating:
+  type: pandas.ParquetDataset
+  filepath: data/02_intermediate/reviews_with_verified_rating.parquet # Will go into next node hence intermediary but has features added to ittagged_customers:
+tagged_customers:  
   type: pandas.ParquetDataset
   filepath: data/04_feature/tagged_customers.parquet
-
 order_distances:
   type: pandas.ParquetDataset
   filepath: data/04_feature/order_distances.parquet
-
 distance_seller_stats:
   type: pandas.ParquetDataset
   filepath: data/04_feature/distance_seller_stats.parquet

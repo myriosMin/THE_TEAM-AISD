@@ -25,7 +25,7 @@ def load_csv(file_path: Path) -> pd.DataFrame:
     """
     # Download the file if it does not exist (fixed to Olist dataset from Kaggle for demonstration)
     if not file_path.exists():
-        print(f"File {file_path.name} not found. Downloading from Kaggle...")
+        logging.warning(f"File {file_path.name} not found. Downloading from Kaggle...")
         
         df = kagglehub.load_dataset(
         KaggleDatasetAdapter.PANDAS,
@@ -34,7 +34,7 @@ def load_csv(file_path: Path) -> pd.DataFrame:
         )
 
         df.to_csv(file_path, index=False)
-        print(f"File {file_path.name} downloaded successfully and loaded into {file_path.parent}.")
+        logging.info(f"File {file_path.name} downloaded successfully and loaded into {file_path.parent}.")
         
     # Returns the pandas DataFrame    
     return pd.read_csv(file_path) 
@@ -63,7 +63,7 @@ def null_duplicate_check(df: pd.DataFrame, col: Optional[list[str]] = None, verb
             logging.info("Null value counts per column:")
             logging.info(df.isnull().sum())
     else:
-        print("No null values found.")
+        logging.info("No null values found.")
     
     # Check for duplicates
     if df.duplicated().any():
@@ -79,45 +79,51 @@ def null_duplicate_check(df: pd.DataFrame, col: Optional[list[str]] = None, verb
         logging.info("No duplicates found.")
     
 
-def cap_outliers(col: pd.Series,  
-                 min_cap: Union[float, bool, None] = None,
-                 max_cap: Union[float, bool, None] = None) -> pd.Series:
+# Removed redundant imports of numpy, pandas, and typing
+
+def cap_outliers(col: pd.Series, min_cap: Union[float, bool, None] = None, max_cap: Union[float, bool, None] = None) -> pd.Series:
     """
-    Cap outliers in a specified column of the DataFrame.
-    
+    Cap outliers in a specified Series.
+
     Parameters:
         col (pd.Series): Series to apply capping.
-        min_cap (float or bool): 
-            - If float: use this as the lower cap value.
-            - If True: use 1st percentile as lower cap.
-            - If None or False: no lower capping.
-        max_cap (float or bool): 
-            - If float: use this as the upper cap value.
-            - If True: use 99th percentile as upper cap.
-            - If None or False: no upper capping.
-    
+        min_cap (float or bool or None):
+            - float → use this as lower cap
+            - True  → use 1st percentile as lower cap
+            - False or None → no lower capping
+        max_cap (float or bool or None):
+            - float → use this as upper cap
+            - True  → use 99th percentile as upper cap
+            - False or None → no upper capping
+
     Returns:
-        pd.Series: The capped column as a new Series.
+        pd.Series: The capped Series.
     """
 
-    # Determine cap values
-    if isinstance(min_cap, bool) and min_cap:
-        min_val = col.quantile(0.01)
+    # Determine lower cap
+    if isinstance(min_cap, bool):
+        if min_cap:                         
+            min_val = col.quantile(0.01)
+        else:                               
+            min_val = -np.inf
     elif isinstance(min_cap, (int, float)):
-        min_val = min_cap
+        min_val = float(min_cap)            
     else:
-        min_val = -np.inf
+        min_val = -np.inf                   
 
-    if isinstance(max_cap, bool) and max_cap:
-        max_val = col.quantile(0.99)
+    # Determine upper cap
+    if isinstance(max_cap, bool):
+        if max_cap:                         
+            max_val = col.quantile(0.99)
+        else:                               
+            max_val = np.inf
     elif isinstance(max_cap, (int, float)):
-        max_val = max_cap
+        max_val = float(max_cap)            
     else:
-        max_val = np.inf
+        max_val = np.inf                    
 
-    # Apply capping
+    # Apply capping 
     capped_series = col.clip(lower=min_val, upper=max_val)
-
     return capped_series
 
 def clean_location_columns(df: pd.DataFrame, zip_col: str, city_col: str, state_col: str) -> pd.DataFrame:  # gonna use when cleaning
