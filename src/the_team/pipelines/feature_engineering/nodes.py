@@ -133,9 +133,6 @@ def create_transaction_features(
 # calling model at module level to ensure it is called once per run
 analyzer = create_analyzer(task="sentiment", lang="pt") # using a portugese model to directly analyze portugese
 
-# Load the model once
-analyzer = create_analyzer(task="sentiment", lang="pt")
-
 # Cache dictionary to avoid redundant predictions
 sentiment_cache = {}
 
