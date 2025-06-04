@@ -3,3 +3,23 @@
 #
 # Documentation for this file format can be found in "Parameters"
 # Link: https://docs.kedro.org/en/0.19.12/configuration/parameters.html
+split:
+  test_size: 0.2
+  stratify: True
+  random_state: 42
+
+skip:
+  skip_logistic: True
+  skip_lightgbm: False
+
+logistic_regression:
+  C: 1.0
+  max_iter: 500
+  solver: liblinear
+  class_weight: balanced
+
+lightgbm:
+  n_estimators: 100
+  learning_rate: 0.1
+  max_depth: 6
+  scale_pos_weight: 15  # matches imbalance ratio

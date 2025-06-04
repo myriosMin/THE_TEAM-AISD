@@ -212,7 +212,7 @@ def add_verified_rating(reviews: pd.DataFrame, run_sentiment: bool = True) -> pd
             (sentiment == "negative" and score in [1, 2])
         )
 
-    reviews["is_verified"] = reviews.apply(is_verified, axis=1)
+    reviews["is_verified"] = reviews.apply(is_verified, axis=1) # type: ignore
 
     # Dropping comments column
     reviews.drop(columns=["review_comment_message"], inplace=True)
@@ -356,3 +356,61 @@ def calculate_seller_repeat_buyer_rate(df: pd.DataFrame) -> pd.DataFrame:
     distance_seller_stats = pd.merge(df, seller_repeat_stats[["seller_id", "seller_repeat_buyer_rate"]], on="seller_id", how="left")
 
     return distance_seller_stats
+
+def merge_model_inputs(
+    transaction_features: pd.DataFrame,
+    product_features: pd.DataFrame,
+    review_features: pd.DataFrame,
+    distance_seller_stats: pd.DataFrame
+) -> pd.DataFrame:
+    """
+    Merge all feature datasets into a single modeling input DataFrame.
+
+    Args:
+        transaction_features (pd.DataFrame): Order-item level transaction features
+        product_features (pd.DataFrame): Product-level attributes
+        review_features (pd.DataFrame): Review scores per order
+        distance_seller_stats (pd.DataFrame): Seller-buyer geographic and repeat info
+
+    Returns:
+        pd.DataFrame: Merged modeling inputs with selected features
+    """
+    # 1. Merge seller-level distance and repeat rate features
+    merged = transaction_features.merge(
+        distance_seller_stats.drop(columns=["num_orders", "is_repeat_buyer"]),
+        on=["order_id", "product_id", "seller_id", "customer_id", "customer_unique_id"],
+        how="left"
+    )
+
+    # 2. Merge product-level features
+    merged = merged.merge(
+        product_features,
+        on="product_id",
+        how="left"
+    )
+
+    # 3. Merge review scores
+    merged = merged.merge(
+        review_features[["order_id", "review_score"]],
+        on="order_id",
+        how="left"
+    )
+
+    # 4. Final feature selection
+    final_cols = [
+        "deli_duration_exp", "deli_duration_paid", "deli_cost", "free_delivery",
+        "is_bulk", "discount", "item_price", "high_price",
+        "credit_card", "voucher", "debit_card", "boleto",
+        "total_spent", "installment",
+        "distance_km", "high_density_customer_area", "seller_repeat_buyer_rate",
+        "review_score",
+        "product_category_name", "product_name_length", "product_description_length",
+        "product_photos_qty", "product_weight_g", "product_length_cm",
+        "product_height_cm", "product_width_cm",
+        "is_repeat_buyer"
+    ]
+
+    # Drop missing and duplicate rows
+    model_inputs = merged[final_cols].dropna().drop_duplicates()
+
+    return model_inputs
