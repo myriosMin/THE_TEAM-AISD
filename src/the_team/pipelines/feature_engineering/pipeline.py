@@ -34,7 +34,7 @@ def create_pipeline(**kwargs) -> Pipeline:
         ),
         node(
             func=translate_product_categories,
-            inputs="clean_products",
+            inputs=["clean_products", "translation"],
             outputs="product_features",
             name="create_product_features_node"
         ),

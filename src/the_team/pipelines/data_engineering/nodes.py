@@ -104,7 +104,8 @@ def clean_location_columns(df: pd.DataFrame, zip_col: str, city_col: str, state_
         pd.DataFrame: Cleaned dataframe with standardized location fields.
     """
      # Step 1:  Convert zip prefix to string and remove whitespace
-    df[zip_col] = df[zip_col].astype(str).str.strip()
+    # df[zip_col] = df[zip_col].astype(str).str.strip()
+    df[zip_col] = df[zip_col].astype(str).str.zfill(5)
     assert df[zip_col].dtype == "object", f"{zip_col} should be string"
     
     # Step 2:  Normalize city names
@@ -129,13 +130,43 @@ def clean_customers_dataset(customers: pd.DataFrame) -> pd.DataFrame:
     """
     return clean_location_columns(customers, "customer_zip_code_prefix", "customer_city", "customer_state")
 
+from unidecode import unidecode
+import pandas as pd
+
+def clean_location_columns(df: pd.DataFrame, zip_col: str, city_col: str, state_col: str) -> pd.DataFrame:
+    """
+    Standardize zip code, city, and state columns for consistency in merging, grouping, and filtering.
+
+    Args:
+        df (pd.DataFrame): The DataFrame to clean.
+        zip_col (str): Name of the zip prefix column.
+        city_col (str): Name of the city column.
+        state_col (str): Name of the state column.
+
+    Returns:
+        pd.DataFrame: Cleaned dataframe with standardized location fields.
+    """
+    # Step 1: Convert zip prefix to 5-digit string and remove whitespace
+    df[zip_col] = df[zip_col].astype(str).str.zfill(5)
+    assert df[zip_col].dtype == "object", f"{zip_col} should be string"
+    
+    # Step 2: Normalize city names: lowercase, stripped, accent‐removed
+    df[city_col] = df[city_col].str.lower().str.strip().apply(unidecode)
+    
+    # Step 3: Standardize state codes: uppercase and stripped
+    df[state_col] = df[state_col].str.upper().str.strip()
+    
+    return df
+
+
 def clean_geolocation_dataset(geolocation: pd.DataFrame) -> pd.DataFrame:
     """
     Clean and format the olist_geolocation dataset:
     1. Remove lat/lng outliers
     2. Standardize zip, city, state
     3. Drop duplicates
-    4. Aggregate to average lat/lng per zip prefix
+    4. Identify zip prefixes with large lat/lng range and drop them
+    5. Aggregate to average lat/lng per zip prefix
 
     Args:
         geolocation (pd.DataFrame): Raw geolocation data
@@ -143,7 +174,7 @@ def clean_geolocation_dataset(geolocation: pd.DataFrame) -> pd.DataFrame:
     Returns:
         pd.DataFrame: Aggregated geolocation data (1 row per zip prefix)
     """
-    # Step 1: Remove invalid lat/lng rows
+    # Step 1: Remove invalid lat/lng rows (outside Brazil’s bounding box)
     valid_lat_range = (-33.75116944, 5.27438888)
     valid_lng_range = (-73.98283055, -34.79314722)
 
@@ -152,7 +183,7 @@ def clean_geolocation_dataset(geolocation: pd.DataFrame) -> pd.DataFrame:
         (geolocation["geolocation_lng"].between(*valid_lng_range))
     ]
 
-    # Step 2: Standardize text formatting
+    # Step 2: Standardize text formatting (zip, city, state)
     geolocation = clean_location_columns(
         geolocation,
         zip_col="geolocation_zip_code_prefix",
@@ -160,10 +191,36 @@ def clean_geolocation_dataset(geolocation: pd.DataFrame) -> pd.DataFrame:
         state_col="geolocation_state"
     )
 
-    # Step 3: Remove duplicates
+    # Step 3: Remove exact duplicate rows
     geolocation = geolocation.drop_duplicates()
 
-    # Step 4: Aggregate to average lat/lng per zip prefix
+    # Step 4: Compute per-zip min/max/std and drop zip prefixes with large spread
+    #   4a. Group by zip prefix, compute lat_min, lat_max, lng_min, lng_max, etc.
+    geo_range = (
+        geolocation.groupby("geolocation_zip_code_prefix")
+        .agg({
+            "geolocation_lat": ["min", "max"],
+            "geolocation_lng": ["min", "max"]
+        })
+    )
+    # Flatten column names
+    geo_range.columns = ["lat_min", "lat_max", "lng_min", "lng_max"]
+    geo_range = geo_range.reset_index()
+    # Compute actual numeric range for lat and lng
+    geo_range["lat_range"] = geo_range["lat_max"] - geo_range["lat_min"]
+    geo_range["lng_range"] = geo_range["lng_max"] - geo_range["lng_min"]
+
+    #   4b. Identify zip prefixes where either lat_range or lng_range > 0.5 degrees
+    noisy_zips = geo_range[
+        (geo_range["lat_range"] > 0.5) | (geo_range["lng_range"] > 0.5)
+    ]["geolocation_zip_code_prefix"].unique()
+
+    #   4c. Drop all rows from geolocation whose zip prefix is in noisy_zips
+    geolocation = geolocation[
+        ~geolocation["geolocation_zip_code_prefix"].isin(noisy_zips)
+    ].reset_index(drop=True)
+
+    # Step 5: Aggregate to average lat/lng per zip prefix
     geolocation = (
         geolocation
         .groupby("geolocation_zip_code_prefix")[["geolocation_lat", "geolocation_lng"]]
@@ -172,6 +229,7 @@ def clean_geolocation_dataset(geolocation: pd.DataFrame) -> pd.DataFrame:
     )
 
     return geolocation
+
 
 def clean_payments_dataset(payments: pd.DataFrame) -> pd.DataFrame:
     """
@@ -232,8 +290,8 @@ def clean_products_dataset(products: pd.DataFrame) -> pd.DataFrame:
 
     # Step 2: 
     products = products.astype({
-    "product_name_length": int,
-    "product_description_length": int,
+    "product_name_lenght": int,
+    "product_description_lenght": int,
     "product_photos_qty": int
     })
 
