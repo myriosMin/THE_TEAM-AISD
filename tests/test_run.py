@@ -1,4 +1,5 @@
 import sys
+import time
 from pathlib import Path
 
 # Add '../src' to Python path so imports work
@@ -9,14 +10,21 @@ from the_team.pipelines.feature_engineering.nodes import add_verified_rating
 
 # Load full dataset and sample 100 rows
 df_full = pd.read_csv("data/01_raw/olist_order_reviews_dataset.csv")
-df_sample = df_full.sample(n=100, random_state=42)
+df_sample = df_full.sample(n=99224, random_state=42)
+
+# Measure time taken
+start_time = time.time()
 
 # Run the Kedro node function
 result_df = add_verified_rating(df_sample)
 
-# Print important columns to console
+end_time = time.time()
+elapsed = end_time - start_time
+
+# Print important columns
 print(result_df[["order_id", "review_score", "sentiment", "is_verified"]])
 
+# Check and print evaluation
 for _, row in result_df.iterrows():
     score = row["review_score"]
     sentiment = row["sentiment"]
@@ -31,5 +39,7 @@ for _, row in result_df.iterrows():
     status = "✅" if match else "❌"
     print(f"{status} {score} | {comment}... → {sentiment}")
 
+# Sentiment distribution
+print("\nSentiment distribution:")
 print(result_df['sentiment'].value_counts(normalize=True))
-
+print(f"\n🕒 Time taken: {elapsed:.2f} seconds\n")

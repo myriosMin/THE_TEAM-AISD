@@ -219,7 +219,7 @@ def clean_products_dataset(products: pd.DataFrame) -> pd.DataFrame:
     """
     Clean the olist_products dataset with the following steps:
     1. Drops NaN cells
-    2. Changes datatype to be more efficient for certain columns
+    2. Change datatype to int
 
     Args:
         products (pd.DataFrame): Raw products data

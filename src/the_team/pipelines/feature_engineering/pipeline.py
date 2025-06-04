@@ -29,8 +29,14 @@ def create_pipeline(**kwargs) -> Pipeline:
         node(
             func=add_verified_rating,
             inputs="clean_reviews",
-            outputs="reviews_with_verified_rating",
-            name="verified_rating_node"
+            outputs="review_features",
+            name="create_review_features_node"
+        ),
+        node(
+            func=translate_product_categories,
+            inputs="clean_products",
+            outputs="product_features",
+            name="create_product_features_node"
         ),
         node(
             func=create_transaction_features,
