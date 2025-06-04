@@ -68,6 +68,15 @@ transaction_features:
 review_features:
   type: pandas.ParquetDataset
   filepath: data/04_feature/review_features.parquet
-  product_features:
+product_features:
   type: pandas.ParquetDataset
   filepath: data/04_feature/product_features.parquet
+tagged_customers:  
+  type: pandas.ParquetDataset
+  filepath: data/04_feature/tagged_customers.parquet
+order_distances:
+  type: pandas.ParquetDataset
+  filepath: data/04_feature/order_distances.parquet
+distance_seller_stats:
+  type: pandas.ParquetDataset
+  filepath: data/04_feature/distance_seller_stats.parquet
