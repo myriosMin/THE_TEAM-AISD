@@ -235,8 +235,7 @@ def clean_products_dataset(products: pd.DataFrame) -> pd.DataFrame:
     products["product_photos_qty"] = products["product_photos_qty"].fillna(0).astype(float)
 
     # Step 2:
-    products = products.dropna(
-    subset=["product_weight_g", "product_length_cm", "product_height_cm", "product_width_cm"]).reset_index(drop=True)
+    products = products.dropna(subset=["product_weight_g", "product_length_cm", "product_height_cm", "product_width_cm"]).reset_index(drop=True)
 
     # Step 3: 
     products.rename(columns={"product_name_lenght": "product_name_length"}, inplace=True)
