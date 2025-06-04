@@ -219,7 +219,8 @@ def clean_products_dataset(products: pd.DataFrame) -> pd.DataFrame:
     """
     Clean the olist_products dataset with the following steps:
     1. Drops NaN cells
-    2. Change datatype to int
+    2. Rename wrongly spelled column: lenght to length
+    3. Change datatype to int
 
     Args:
         products (pd.DataFrame): Raw products data
@@ -231,6 +232,9 @@ def clean_products_dataset(products: pd.DataFrame) -> pd.DataFrame:
     products.dropna(inplace=True)
 
     # Step 2: 
+    products.rename(columns={"product_name_lenght": "product_name_length"}, inplace=True)
+
+    # Step 3:
     products = products.astype({
     "product_name_length": int,
     "product_description_length": int,
