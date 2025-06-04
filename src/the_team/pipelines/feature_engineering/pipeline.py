@@ -26,12 +26,12 @@ def create_pipeline(**kwargs) -> Pipeline:
             outputs="distance_seller_stats",
             name="calculate_seller_repeat_buyer_rate_node"
         ),
-        node(
-            func=add_verified_rating,
-            inputs="clean_reviews",
-            outputs="review_features",
-            name="create_review_features_node"
-        ),
+        # node(
+        #     func=add_verified_rating,
+        #     inputs="clean_reviews",
+        #     outputs="review_features",
+        #     name="create_review_features_node"
+        # ),
         node(
             func=translate_product_categories,
             inputs=["clean_products", "translation"],

@@ -233,6 +233,7 @@ def clean_products_dataset(products: pd.DataFrame) -> pd.DataFrame:
 
     # Step 2: 
     products.rename(columns={"product_name_lenght": "product_name_length"}, inplace=True)
+    products.rename(columns={"product_description_lenght": "product_description_length"}, inplace=True)
 
     # Step 3:
     products = products.astype({
