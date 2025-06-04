@@ -198,6 +198,9 @@ def add_verified_rating(reviews: pd.DataFrame) -> pd.DataFrame:
         )
 
     reviews["is_verified"] = reviews.apply(is_verified, axis=1)
+
+    # Dropping comments column
+    reviews.drop(columns=["review_comment_message"], inplace=True)
     return reviews
 
 def translate_product_categories(products: pd.DataFrame, translation: pd.DataFrame) -> pd.DataFrame:
