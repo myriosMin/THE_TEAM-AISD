@@ -204,7 +204,7 @@ def add_verified_rating(reviews: pd.DataFrame, run_sentiment: bool = True) -> pd
         score = row["review_score"]
 
         if sentiment == "No comment":
-            return "No comment"
+            return None
 
         return (
             (sentiment in ["positive", "neutral"] and score in [4, 5]) or
