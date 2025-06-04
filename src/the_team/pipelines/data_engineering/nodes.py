@@ -229,13 +229,19 @@ def clean_products_dataset(products: pd.DataFrame) -> pd.DataFrame:
         pd.DataFrame: Cleaned products data
     """
     # Step 1: 
-    products.dropna(inplace=True)
+    products["product_category_name"] = products["product_category_name"].fillna("unknown")
+    products["product_name_lenght"] = products["product_name_lenght"].fillna(0).astype(float)
+    products["product_description_lenght"] = products["product_description_lenght"].fillna(0).astype(float)
+    products["product_photos_qty"] = products["product_photos_qty"].fillna(0).astype(float)
 
-    # Step 2: 
+    # Step 2:
+    products = products.dropna(subset=["product_weight_g", "product_length_cm", "product_height_cm", "product_width_cm"]).reset_index(drop=True)
+
+    # Step 3: 
     products.rename(columns={"product_name_lenght": "product_name_length"}, inplace=True)
     products.rename(columns={"product_description_lenght": "product_description_length"}, inplace=True)
 
-    # Step 3:
+    # Step 4:
     products = products.astype({
     "product_name_length": int,
     "product_description_length": int,

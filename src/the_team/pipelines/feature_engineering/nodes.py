@@ -132,7 +132,7 @@ def create_transaction_features(
 #  Product/Review Related Nodes
 
 # calling model at module level to ensure it is called once per run
-analyzer = create_analyzer(task="sentiment", lang="pt") # using a portugese model to directly analyze portugese
+analyzer = create_analyzer(task="sentiment", lang="pt")  # using a Portuguese model to directly analyze Portuguese
 
 # Cache dictionary to avoid redundant predictions
 sentiment_cache = {}
@@ -163,24 +163,37 @@ def heuristic_sentiment(text: str, model_sentiment: str) -> str:
 
     return model_sentiment
 
-def analyze_sentiment(text: str) -> str | None:
+def analyze_sentiment(text: str) -> str:
     if not text.strip():
-        return None
+        return "No comment"
     if text in sentiment_cache:
         return sentiment_cache[text]
 
     result = analyzer.predict(text)
-    sentiment = heuristic_sentiment(text, map_sentiment(result.output)) # type: ignore
+    sentiment = heuristic_sentiment(text, map_sentiment(result.output))  # type: ignore
     sentiment_cache[text] = sentiment
     return sentiment
 
-def add_verified_rating(reviews: pd.DataFrame) -> pd.DataFrame:
+def add_verified_rating(reviews: pd.DataFrame, run_sentiment: bool = True) -> pd.DataFrame:
     """
-    Adds 'sentiment' and 'is_verified' features using a Portuguese BERT model.
-    """
+    Adds 'sentiment' and 'is_verified' features to the reviews DataFrame using a Portuguese BERT model.
 
+    If run_sentiment=False, skips analysis and removes review_comment_message.
+
+    Args:
+        reviews (pd.DataFrame): Input with 'review_comment_message' and 'review_score'
+        run_sentiment (bool): Whether to run sentiment analysis
+
+    Returns:
+        pd.DataFrame: Processed DataFrame with 'sentiment', 'is_verified' added, and comment column dropped
+    """
     reviews = reviews.copy()
     reviews["review_comment_message"] = reviews["review_comment_message"].fillna("").astype(str)
+
+    if not run_sentiment:
+        # Skip sentiment analysis entirely
+        reviews.drop(columns=["review_comment_message"], inplace=True)
+        return reviews
 
     # Running sentiment analysis with caching
     reviews["sentiment"] = reviews["review_comment_message"].apply(analyze_sentiment)
@@ -189,15 +202,20 @@ def add_verified_rating(reviews: pd.DataFrame) -> pd.DataFrame:
     def is_verified(row):
         sentiment = row["sentiment"]
         score = row["review_score"]
-        if sentiment is None:
-            return False
+
+        if sentiment == "No comment":
+            return None
+
         return (
-            (sentiment == "positive" and score in [4, 5]) or
+            (sentiment in ["positive", "neutral"] and score in [4, 5]) or
             (sentiment == "neutral" and score == 3) or
             (sentiment == "negative" and score in [1, 2])
         )
 
     reviews["is_verified"] = reviews.apply(is_verified, axis=1)
+
+    # Dropping comments column
+    reviews.drop(columns=["review_comment_message"], inplace=True)
     return reviews
 
 def translate_product_categories(products: pd.DataFrame, translation: pd.DataFrame) -> pd.DataFrame:
