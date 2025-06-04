@@ -5,4 +5,4 @@
 # Link: https://docs.kedro.org/en/0.19.12/configuration/parameters.html
 
 feature_engineering:
-  run_sentiment: False  # ← default value; set to True if you want to proceed with analysis
+  run_sentiment: False  # ← default value; set to True if you want to proceed with sentiment analysis
