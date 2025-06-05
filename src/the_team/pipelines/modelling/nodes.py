@@ -8,6 +8,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.linear_model import LogisticRegression
 from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import StandardScaler, OneHotEncoder
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import roc_auc_score, precision_recall_curve, classification_report, auc, roc_curve
 from sklearn.dummy import DummyClassifier
 from lightgbm import LGBMClassifier
@@ -18,18 +19,6 @@ dummy_model = DummyClassifier(strategy="most_frequent")
 dummy_model.fit([[0]], [0])  # type: ignore # Minimal valid fit
 
 dummy_metrics = {"skipped": True}
-
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler, OneHotEncoder
-from sklearn.pipeline import Pipeline
-from sklearn.compose import ColumnTransformer
-from sklearn.metrics import (
-    classification_report, roc_auc_score, precision_recall_curve, auc, roc_curve
-)
-import pandas as pd
-import numpy as np
-
 def train_random_forest_model(
     data: pd.DataFrame,
     test_size: float,
