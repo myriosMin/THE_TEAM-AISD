@@ -105,7 +105,7 @@ def clean_location_columns(df: pd.DataFrame, zip_col: str, city_col: str, state_
     """
      # Step 1:  Convert zip prefix to string and remove whitespace
     # df[zip_col] = df[zip_col].astype(str).str.strip()
-    df[zip_col] = df[zip_col].astype(str).str.zfill(5)
+    df[zip_col] = df[zip_col].astype(str).str.strip().zfill(5)
     assert df[zip_col].dtype == "object", f"{zip_col} should be string"
     
     # Step 2:  Normalize city names
