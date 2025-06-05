@@ -293,3 +293,87 @@ def plot_pairplot(df: pd.DataFrame,
         logging.info(f"Pairplot saved to {save_path}.png")
     plt.show()
     return None
+
+def plot_classification_report(cls_report: dict, model: str) -> None:
+    """
+    Plot a classification report as a clustered bar chart.
+    Args:
+        cls_report (dict): Classification report dictionary from sklearn.metrics.classification_report.
+        model (str): Name of the model for the plot title.
+    Returns:
+        None
+    """
+    # Copy the classification report to avoid modifying the original
+    cls_report = cls_report.copy()
+    # Remove 'accuracy' if it exists
+    cls_report.pop("accuracy", None)
+
+    # Target metrics
+    metrics = list(cls_report[next(iter(cls_report))].keys())  # Get metrics from the first class
+
+    # Drop 'support' from metrics if it exists
+    if 'support' in metrics:
+        metrics.remove('support')
+
+    # Convert to long-form DataFrame
+    rows = []
+    for label, scores in cls_report.items():
+        for metric in metrics:
+            rows.append({
+                "Metric": metric,
+                "Class": label,
+                "Score": scores[metric]
+            })
+
+    df = pd.DataFrame(rows)
+
+    # Plot
+    plt.figure(figsize=(9, 3))
+    sns.barplot(data=df, x="Metric", y="Score", hue="Class")
+
+    # Styling
+    plt.ylim(0, 1.05)
+    plt.title(f"Classification Report Metrics {model} by Class")
+    plt.legend(title="Class", loc="upper right", bbox_to_anchor=(1.25, 1))
+    plt.grid(axis='y', linestyle='--', alpha=0.5)
+    plt.tight_layout()
+    plt.show()
+    return None
+
+def plot_before_after_metrics(before_after_dict: dict, title: str) -> None:
+    """
+    Plot the true class metrics before and after fine-tuning.
+    Args:
+        before_after_dict (dict): Dictionary containing model results with classification reports.
+    Returns:
+        None
+    """
+    # Target metrics
+    metrics = ['precision', 'recall', 'f1-score']
+    rows = []
+    for model_name, result in before_after_dict.items():
+        cls_report = result['classification_report']
+        true_class_metrics = cls_report.get('True') or cls_report.get('1')
+        for metric in metrics:
+            rows.append({
+                "Metric": metric,
+                "Score": true_class_metrics[metric],
+                "Model": model_name
+            })
+    df = pd.DataFrame(rows)
+
+    # Plot using Seaborn
+    plt.figure(figsize=(8, 5))
+    ax = sns.barplot(data=df, x="Metric", y="Score", hue="Model")
+
+    # Indicate the numbers for clarity
+    for container in ax.containers:
+        ax.bar_label(container, fmt="%.2f", label_type="edge", padding=3) # type: ignore
+
+    plt.title(f"True Class Metrics Before and After {title}")
+    plt.ylim(0, 1.05)
+    plt.grid(axis='y', linestyle='--', alpha=0.5)
+    plt.tight_layout()
+    plt.legend(loc="upper right", bbox_to_anchor=(1.4, 1))
+    plt.show()
+    return None
