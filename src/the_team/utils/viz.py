@@ -131,6 +131,49 @@ def plot_categorical_distribution(df: pd.DataFrame, column: str, title: Optional
     plt.tight_layout()
     plt.show()
 
+def plot_geolocation_scatter(df, lat_col='geolocation_lat', lng_col='geolocation_lng', title='Geolocation Points Across Brazil'):
+    """
+    Plots a scatter plot of latitude and longitude points from a DataFrame.
+    
+    Parameters:
+        df (pd.DataFrame): The DataFrame containing geolocation data.
+        lat_col (str): Name of the latitude column.
+        lng_col (str): Name of the longitude column.
+        title (str): Title of the plot.
+    """
+    plt.figure(figsize=(8, 6))
+    plt.scatter(df[lng_col], df[lat_col], s=0.01, alpha=0.5)
+    plt.title(title)
+    plt.xlabel('Longitude')
+    plt.ylabel('Latitude')
+    plt.show()
+
+def plot_lat_lng_range_histograms(geo_range_df):
+    """
+    Plots histograms of latitude and longitude ranges.
+    
+    Parameters:
+        geo_range_df (pd.DataFrame): DataFrame with 'lat_range' and 'lng_range' columns.
+    """
+    plt.figure(figsize=(10, 4))
+
+    plt.subplot(1, 2, 1)
+    plt.hist(geo_range_df["lat_range"], bins=100)
+    plt.title("Latitude Range per Zip Code Prefix")
+    plt.xlabel("Latitude Range (degrees)")
+    plt.ylabel("Frequency")
+    plt.xlim(0, 5)
+
+    plt.subplot(1, 2, 2)
+    plt.hist(geo_range_df["lng_range"], bins=100)
+    plt.title("Longitude Range per Zip Code Prefix")
+    plt.xlabel("Longitude Range (degrees)")
+    plt.ylabel("Frequency")
+    plt.xlim(0, 5)
+
+    plt.tight_layout()
+    plt.show()
+
 def plot_top_locations(
     df: pd.DataFrame,
     state_col: str = "customer_state",
@@ -172,45 +215,6 @@ def plot_top_locations(
     axes[1].set_xlabel("Count")
     axes[1].invert_yaxis()
 
-    plt.tight_layout()
-    plt.show()
-
-def plot_datashader_map(df, lat_col, lng_col, shapefile_path, title="Brazil Geolocation Map"): #gonna be used after merging the geolocation.csv with sellers and customers
-    """
-    Combines Datashader density plot with GeoPandas state borders.
-    
-    Args:
-        df (pd.DataFrame): DataFrame with lat/lng columns.
-        lat_col (str): Latitude column name.
-        lng_col (str): Longitude column name.
-        shapefile_path (str): Path to Brazil state shapefile (e.g. GeoJSON or .shp).
-        title (str): Plot title.
-    """
-    # Project lat/lng to Web Mercator
-    x, y = webm(df[lng_col], df[lat_col])
-    df["x"], df["y"] = x, y
-
-    # Datashader canvas
-    cvs = ds.Canvas(plot_width=1000, plot_height=800)
-    agg = cvs.points(df, "x", "y", ds.count())
-    img = tf.shade(agg, cmap=["lightblue", "blue", "darkblue"], how="eq_hist")
-    img_pil = tf.set_background(img, "black").to_pil()
-
-    # Load and convert shapefile to Web Mercator
-    gdf = gpd.read_file(shapefile_path)
-    gdf = gdf.to_crs(epsg=3857)
-
-    # Plot everything
-    fig, ax = plt.subplots(figsize=(12, 10))
-    ax.imshow(img_pil, extent=(df["x"].min(), df["x"].max(), df["y"].min(), df["y"].max()), aspect="auto")
-    gdf.boundary.plot(ax=ax, edgecolor="white", linewidth=0.5)
-
-    for idx, row in gdf.iterrows():
-        centroid = row.geometry.centroid
-        ax.text(centroid.x, centroid.y, row["name"], color="white", fontsize=8, ha="center")
-
-    ax.set_title(title, fontsize=14, fontweight="bold")
-    ax.axis("off")
     plt.tight_layout()
     plt.show()
     

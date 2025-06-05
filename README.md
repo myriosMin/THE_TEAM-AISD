@@ -2,7 +2,89 @@
 
 [![Powered by Kedro](https://img.shields.io/badge/powered_by-kedro-ffc900?logo=kedro)](https://kedro.org)
 
+---
+
+## 🔧 Setup Instructions for THE\_TEAM-AISD (Kedro + Spark Project)
+
+### 🚨 Prerequisites
+
+* Ensure **Docker Desktop** is installed and running on your machine:
+  👉 [https://www.docker.com/products/docker-desktop](https://www.docker.com/products/docker-desktop)
+
+---
+
+### 🛠️ How to Build the Docker Image
+
+1. Open your terminal in the folder containing the `Dockerfile`.
+2. Run the following command:
+
+   ```bash
+   docker build -t <Image name> .
+   ```
+
+---
+
+### ▶️ How to Start the Container
+
+Run the following command in your terminal:
+
+```bash
+docker run -p 8888:8888 <Image name>
+```
+
+* This will start **JupyterLab** inside the container.
+* Look for a URL in the terminal like:
+
+  ```
+  http://127.0.0.1:8888/lab?token=your_token_here
+  ```
+* Open this link in your browser to access the Jupyter environment.
+
+---
+
+### 📓 Running the Project Pipeline in Jupyter
+
+Once JupyterLab is open:
+
+1. Navigate to the `notebooks/` directory.
+
+2. Open your `.ipynb` file (or create a new notebook).
+
+3. Add the following in a cell to run the pipeline:
+
+   ```python
+   !chmod +x run.sh
+   !./run.sh
+   ```
+
+4. Run the cell — this will execute the full Kedro pipeline via `run.sh`.
+
+---
+
+### 📁 Note on Project Files
+
+* The container automatically **clones the GitHub repo** inside `/home/kedro_docker`.
+* All data folders (`data/01_raw`, etc.) will be created on first run by the pipeline if not already present.
+* Jupyter runs as the `kedro_docker` user and handles file permissions internally.
+
+---
+
+### ✅ Summary of Docker Commands
+
+| Step          | Command                                        |
+| ------------- | ---------------------------------------------- |
+| Build image   | `docker build -t kedro-spark-notebook .`       |
+| Run container | `docker run -p 8888:8888 kedro-spark-notebook` |
+| Run pipeline  | Use `!./run.sh` inside Jupyter notebook        |
+
+---
+
 ## Overview
+
+🔧 Setup Instructions for THE_TEAM-AISD (Kedro + Spark Project)
+🚨 Prerequisites
+Ensure Docker Desktop is installed and running on your machine:
+👉 https://www.docker.com/products/docker-desktop
 
 This is your new Kedro project with PySpark setup, which was generated using `kedro 0.19.12`.
 

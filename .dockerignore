@@ -1,0 +1,36 @@
+##########################
+# Kedro PROJECT
+
+# ignore Dockerfile and .dockerignore
+Dockerfile
+.dockerignore
+
+# ignore potentially sensitive credentials files
+conf/**/*credentials*
+
+# ignore all local configuration
+conf/local
+!conf/local/.gitkeep
+
+# ignore everything in the following folders
+data
+logs
+notebooks
+references
+results
+
+# But keep the directory structure
+!data/01_raw/.gitkeep
+!data/02_intermediate/.gitkeep
+!data/03_primary/.gitkeep
+!data/04_feature/.gitkeep
+!data/05_model_input/.gitkeep
+!data/06_models/.gitkeep
+!data/07_model_output/.gitkeep
+!data/08_reporting/.gitkeep
+
+# except the following
+!logs/.gitkeep
+!notebooks/.gitkeep
+!references/.gitkeep
+!results/.gitkeep

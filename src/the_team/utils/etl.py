@@ -215,6 +215,34 @@ def format_geolocation(geolocation: pd.DataFrame) -> pd.DataFrame:  # gonna use 
 
     return geo_prefix
 
+def compute_geolocation_ranges(df, zip_col="geolocation_zip_code_prefix", lat_col="geolocation_lat", lng_col="geolocation_lng", city_col="geolocation_city"):
+    """
+    Computes latitude and longitude range statistics per zip code prefix.
+    
+    Parameters:
+        df (pd.DataFrame): Geolocation DataFrame.
+        zip_col (str): Zip code prefix column.
+        lat_col (str): Latitude column.
+        lng_col (str): Longitude column.
+        city_col (str): City column.
+
+    Returns:
+        pd.DataFrame: Aggregated ranges and statistics.
+    """
+    geo_range = (
+        df.groupby(zip_col)
+        .agg({
+            lat_col: ["min", "max", "std"],
+            lng_col: ["min", "max", "std"],
+            city_col: "nunique"
+        })
+    )
+    geo_range.columns = ['lat_min', 'lat_max', 'lat_std', 'lng_min', 'lng_max', 'lng_std', 'n_cities']
+    geo_range["lat_range"] = geo_range["lat_max"] - geo_range["lat_min"]
+    geo_range["lng_range"] = geo_range["lng_max"] - geo_range["lng_min"]
+    return geo_range.reset_index()
+
+
 def format_sellers(sellers: pd.DataFrame) -> pd.DataFrame:  # gonna use when cleaning
     """
     Format and standardize the sellers dataset.
