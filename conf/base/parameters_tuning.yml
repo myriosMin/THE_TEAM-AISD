@@ -1,0 +1,10 @@
+# This is a boilerplate parameters config generated for pipeline 'tuning'
+# using Kedro 0.19.12.
+#
+# Documentation for this file format can be found in "Parameters"
+# Link: https://docs.kedro.org/en/0.19.12/configuration/parameters.html
+logistic_tuning:
+  classifier__C: [0.01, 0.1, 1, 10]               # Test regularization strength
+  classifier__solver: ["liblinear"]              # Keep consistent; 'saga' only if you add penalties
+  classifier__max_iter: [300, 500, 1000]
+  classifier__class_weight: ["balanced", None]   # Test letting it learn imbalance on its own
