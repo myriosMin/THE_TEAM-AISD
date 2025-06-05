@@ -14,8 +14,6 @@ from sklearn.metrics import (
 from sklearn.model_selection import train_test_split
 import numpy as np
 import pandas as pd
-from typing import Tuple
-
 def define_weak_positive_criteria(df: pd.DataFrame) -> pd.DataFrame:
     """
     Define business logic for weak positive labeling.
