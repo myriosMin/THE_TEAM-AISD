@@ -69,4 +69,6 @@ def create_pipeline(**kwargs) -> Pipeline:
                 "xgboost_model_predictions_test",
                 "xgboost_model_top_10_predictions"
             ],
-            name="train_xgboost_
+            name="train_xgboost_"
+        ),
+    ])
