@@ -1,15 +1,17 @@
 """Project pipelines."""
 
-from kedro.framework.project import find_pipelines
 from kedro.pipeline import Pipeline
-
+from the_team.pipelines import data_engineering, feature_engineering, modelling
 
 def register_pipelines() -> dict[str, Pipeline]:
-    """Register the project's pipelines.
+    """Manually register the project's pipelines."""
+    de_pipeline = data_engineering.create_pipeline()
+    fe_pipeline = feature_engineering.create_pipeline()
+    m_pipeline = modelling.create_pipeline()
 
-    Returns:
-        A mapping from pipeline names to ``Pipeline`` objects.
-    """
-    pipelines = find_pipelines()
-    pipelines["__default__"] = sum(pipelines.values())
-    return pipelines
+    return {
+        "__default__": de_pipeline + fe_pipeline + m_pipeline,
+        "data_engineering": de_pipeline,
+        "feature_engineering": fe_pipeline,
+        "modelling": m_pipeline,
+    }

@@ -27,7 +27,7 @@ def load_csv(file_path: Path) -> pd.DataFrame:
     if not file_path.exists():
         logging.warning(f"File {file_path.name} not found. Downloading from Kaggle...")
         
-        df = kagglehub.load_dataset(
+        df = kagglehub.dataset_load(
         KaggleDatasetAdapter.PANDAS,
         "olistbr/brazilian-ecommerce",
         file_path.name,

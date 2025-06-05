@@ -132,7 +132,7 @@ def create_transaction_features(
 #  Product/Review Related Nodes
 
 # calling model at module level to ensure it is called once per run
-analyzer = create_analyzer(task="sentiment", lang="pt") # using a portugese model to directly analyze portugese
+analyzer = create_analyzer(task="sentiment", lang="pt")  # using a Portuguese model to directly analyze Portuguese
 
 # Cache dictionary to avoid redundant predictions
 sentiment_cache = {}
@@ -163,24 +163,37 @@ def heuristic_sentiment(text: str, model_sentiment: str) -> str:
 
     return model_sentiment
 
-def analyze_sentiment(text: str) -> str | None:
+def analyze_sentiment(text: str) -> str:
     if not text.strip():
-        return None
+        return "No comment"
     if text in sentiment_cache:
         return sentiment_cache[text]
 
     result = analyzer.predict(text)
-    sentiment = heuristic_sentiment(text, map_sentiment(result.output)) # type: ignore
+    sentiment = heuristic_sentiment(text, map_sentiment(result.output))  # type: ignore
     sentiment_cache[text] = sentiment
     return sentiment
 
-def add_verified_rating(reviews: pd.DataFrame) -> pd.DataFrame:
+def add_verified_rating(reviews: pd.DataFrame, run_sentiment: bool = True) -> pd.DataFrame:
     """
-    Adds 'sentiment' and 'is_verified' features using a Portuguese BERT model.
-    """
+    Adds 'sentiment' and 'is_verified' features to the reviews DataFrame using a Portuguese BERT model.
 
+    If run_sentiment=False, skips analysis and removes review_comment_message.
+
+    Args:
+        reviews (pd.DataFrame): Input with 'review_comment_message' and 'review_score'
+        run_sentiment (bool): Whether to run sentiment analysis
+
+    Returns:
+        pd.DataFrame: Processed DataFrame with 'sentiment', 'is_verified' added, and comment column dropped
+    """
     reviews = reviews.copy()
     reviews["review_comment_message"] = reviews["review_comment_message"].fillna("").astype(str)
+
+    if not run_sentiment:
+        # Skip sentiment analysis entirely
+        reviews.drop(columns=["review_comment_message"], inplace=True)
+        return reviews
 
     # Running sentiment analysis with caching
     reviews["sentiment"] = reviews["review_comment_message"].apply(analyze_sentiment)
@@ -189,15 +202,20 @@ def add_verified_rating(reviews: pd.DataFrame) -> pd.DataFrame:
     def is_verified(row):
         sentiment = row["sentiment"]
         score = row["review_score"]
-        if sentiment is None:
-            return False
+
+        if sentiment == "No comment":
+            return None
+
         return (
-            (sentiment == "positive" and score in [4, 5]) or
+            (sentiment in ["positive", "neutral"] and score in [4, 5]) or
             (sentiment == "neutral" and score == 3) or
             (sentiment == "negative" and score in [1, 2])
         )
 
-    reviews["is_verified"] = reviews.apply(is_verified, axis=1)
+    reviews["is_verified"] = reviews.apply(is_verified, axis=1) # type: ignore
+
+    # Dropping comments column
+    reviews.drop(columns=["review_comment_message"], inplace=True)
     return reviews
 
 def translate_product_categories(products: pd.DataFrame, translation: pd.DataFrame) -> pd.DataFrame:
@@ -338,3 +356,61 @@ def calculate_seller_repeat_buyer_rate(df: pd.DataFrame) -> pd.DataFrame:
     distance_seller_stats = pd.merge(df, seller_repeat_stats[["seller_id", "seller_repeat_buyer_rate"]], on="seller_id", how="left")
 
     return distance_seller_stats
+
+def merge_model_inputs(
+    transaction_features: pd.DataFrame,
+    product_features: pd.DataFrame,
+    review_features: pd.DataFrame,
+    distance_seller_stats: pd.DataFrame
+) -> pd.DataFrame:
+    """
+    Merge all feature datasets into a single modeling input DataFrame.
+
+    Args:
+        transaction_features (pd.DataFrame): Order-item level transaction features
+        product_features (pd.DataFrame): Product-level attributes
+        review_features (pd.DataFrame): Review scores per order
+        distance_seller_stats (pd.DataFrame): Seller-buyer geographic and repeat info
+
+    Returns:
+        pd.DataFrame: Merged modeling inputs with selected features
+    """
+    # 1. Merge seller-level distance and repeat rate features
+    merged = transaction_features.merge(
+        distance_seller_stats.drop(columns=["num_orders", "is_repeat_buyer"]),
+        on=["order_id", "product_id", "seller_id", "customer_id", "customer_unique_id"],
+        how="left"
+    )
+
+    # 2. Merge product-level features
+    merged = merged.merge(
+        product_features,
+        on="product_id",
+        how="left"
+    )
+
+    # 3. Merge review scores
+    merged = merged.merge(
+        review_features[["order_id", "review_score"]],
+        on="order_id",
+        how="left"
+    )
+
+    # 4. Final feature selection
+    final_cols = [
+        "deli_duration_exp", "deli_duration_paid", "deli_cost", "free_delivery",
+        "is_bulk", "discount", "item_price", "high_price",
+        "credit_card", "voucher", "debit_card", "boleto",
+        "total_spent", "installment",
+        "distance_km", "high_density_customer_area", "seller_repeat_buyer_rate",
+        "review_score",
+        "product_category_name", "product_name_length", "product_description_length",
+        "product_photos_qty", "product_weight_g", "product_length_cm",
+        "product_height_cm", "product_width_cm",
+        "is_repeat_buyer",
+    ]
+
+    # Drop missing and duplicate rows
+    model_inputs = merged[final_cols].dropna().drop_duplicates()
+
+    return model_inputs
