@@ -36,3 +36,4 @@ xgboost:
   learning_rate: 0.1
   max_depth: 6
   scale_pos_weight: 15 # matches the class imbalance in the dataset
+
