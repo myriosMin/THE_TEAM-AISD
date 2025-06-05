@@ -8,6 +8,26 @@ from .nodes import *
 
 def create_pipeline(**kwargs) -> Pipeline:
     return pipeline([
+            node(
+            func=train_random_forest_model,
+            inputs=[
+                "model_inputs",
+                "params:split.test_size",
+                "params:split.stratify",
+                "params:split.random_state",
+                "params:random_forest.n_estimators",
+                "params:random_forest.max_depth",
+                "params:random_forest.class_weight",
+                "params:skip.skip_random_forest"
+            ],
+            outputs=[
+                "trained_random_forest_model",
+                "random_forest_model_metrics",
+                "random_forest_predictions_test",
+                "random_forest_top_10_predictions"
+            ],
+            name="train_random_forest_model_node"
+        ),
         node(
             func=train_logistic_model,
             inputs=[
@@ -69,6 +89,7 @@ def create_pipeline(**kwargs) -> Pipeline:
                 "xgboost_model_predictions_test",
                 "xgboost_model_top_10_predictions"
             ],
-            name="train_xgboost_"
+            name="train_xgboost"
         ),
     ])
+

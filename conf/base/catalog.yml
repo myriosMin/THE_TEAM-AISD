@@ -99,6 +99,9 @@ trained_lightgbm_model:
 trained_xgboost_model:
   type: pickle.PickleDataset
   filepath: data/06_models/xgboost_model.pkl
+best_logistic_model:
+  type: pickle.PickleDataset
+  filepath: data/06_models/best_logistic_model.pkl
 
 # Model predictions
 random_forest_predictions_test:
@@ -125,6 +128,12 @@ xgboost_predictions_test:
 xgboost_top_10_predictions:
   type: pandas.ParquetDataset
   filepath: data/07_model_output/xgboost_top_10_predictions.parquet
+logistic_predictions_test_tuning:
+  type: pandas.ParquetDataset
+  filepath: data/07_model_output/logistic_predictions_test_tuning.parquet
+logistic_top_10_predictions_tuning:
+  type: pandas.ParquetDataset
+  filepath: data/07_model_output/logistic_top_10_predictions_tuning.parquet
 
 # Model metrics
 random_forest_model_metrics:
@@ -139,3 +148,7 @@ lightgbm_model_metrics:
 xgboost_model_metrics:
   type: json.JSONDataset
   filepath: data/08_reporting/xgboost_model_metrics.json
+logistic_model_tuning_metrics:
+  type: json.JSONDataset
+  filepath: data/08_reporting/logistic_model_tuning_metrics.json
+
