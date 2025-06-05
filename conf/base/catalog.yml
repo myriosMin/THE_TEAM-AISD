@@ -139,4 +139,3 @@ lightgbm_model_metrics:
 xgboost_model_metrics:
   type: json.JSONDataset
   filepath: data/08_reporting/xgboost_model_metrics.json
-logisti
