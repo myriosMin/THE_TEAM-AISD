@@ -14,6 +14,7 @@ from IPython.display import display
 import logging
 from datetime import timedelta
 from typing import Optional, Tuple
+from pathlib import Path
 
 def set_plot_style() -> None:
     """
@@ -264,3 +265,31 @@ def plot_duration_distribution(df: pd.DataFrame, column_x: str, column_y: str, t
     timedelta(hours=median),
     timedelta(hours=mode)
     )
+
+def plot_pairplot(df: pd.DataFrame, 
+                  numeric_cols: Optional[list] = None,
+                  hue: str = 'is_repeat_buyer',
+                  save_path: Optional[str] = None,
+                  ) -> None:
+    """
+    Plot a pairplot of the DataFrame's numeric columns.
+    Args:
+        df (pd.DataFrame): DataFrame containing the data.
+        numeric_cols (Optional[list]): List of numeric column names to include in the pairplot.
+        hue (str): Column name to use for color encoding.
+        save_path (Optional[str]): Path to save the plot image. If None, the plot will not be saved.
+    Returns:
+        None
+    """
+    if numeric_cols is None:
+        numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
+    if not numeric_cols:
+        logging.warning("No numeric columns found for pairplot. Skipping plot.")
+        return
+    sns.pairplot(df, hue=hue, vars=numeric_cols, corner=True)
+    if save_path is not None:
+        # Save the chart to plots
+        plt.savefig(Path(f"docs/source/plots/{save_path}.png"), bbox_inches='tight')
+        logging.info(f"Pairplot saved to {save_path}.png")
+    plt.show()
+    return None

@@ -9,8 +9,15 @@ split:
   random_state: 42
 
 skip:
-  skip_logistic: True
+  skip_random_forest: False
+  skip_logistic: False
   skip_lightgbm: False
+  skip_xgboost: False
+
+random_forest:
+  n_estimators: 100
+  max_depth: 10
+  class_weight: balanced
 
 logistic_regression:
   C: 1.0
@@ -22,4 +29,4 @@ lightgbm:
   n_estimators: 100
   learning_rate: 0.1
   max_depth: 6
-  scale_pos_weight: 15  # matches imbalance ratio
+  scale_pos_weight: 15  # matches

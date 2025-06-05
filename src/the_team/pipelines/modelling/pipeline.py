@@ -51,5 +51,24 @@ def create_pipeline(**kwargs) -> Pipeline:
                 "lightgbm_top_10_predictions"
             ],
             name="train_lightgbm_model_node"
-        )
-    ])
+        ),
+        node(
+            func=train_xgboost_model,
+            inputs=[
+                "model_inputs",
+                "params:split.test_size",
+                "params:split.stratify",
+                "params:split.random_state",
+                "params:xgboost.n_estimators",
+                "params:xgboost.learning_rate",
+                "params:xgboost.max_depth",
+                "params:xgboost.scale_pos_weight",
+                "params:skip.skip_xgboost"
+            ],
+            outputs=[
+                "trained_xgboost_model",
+                "xgboost_model_metrics",
+                "xgboost_model_predictions_test",
+                "xgboost_model_top_10_predictions"
+            ],
+            name="train_xgboost_
