@@ -7,8 +7,6 @@ from kedro.pipeline import node, Pipeline, pipeline  # noqa
 from .nodes import *
 
 def create_pipeline(**kwargs) -> Pipeline:
-    return pipeline([])
-def create_pipeline(**kwargs) -> Pipeline:
     return pipeline([
             node(
             func=train_random_forest_model,
@@ -94,3 +92,4 @@ def create_pipeline(**kwargs) -> Pipeline:
             name="train_xgboost"
         ),
     ])
+
