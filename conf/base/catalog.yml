@@ -80,3 +80,62 @@ order_distances:
 distance_seller_stats:
   type: pandas.ParquetDataset
   filepath: data/04_feature/distance_seller_stats.parquet
+
+# Model input datasets
+model_inputs:
+  type: pandas.ParquetDataset
+  filepath: data/05_model_input/model_inputs.parquet
+
+# Saved models
+trained_random_forest_model:
+  type: pickle.PickleDataset
+  filepath: data/06_models/random_forest_model.pkl
+trained_logistic_model:
+  type: pickle.PickleDataset
+  filepath: data/06_models/logistic_model.pkl
+trained_lightgbm_model:
+  type: pickle.PickleDataset
+  filepath: data/06_models/lightgbm_model.pkl
+trained_xgboost_model:
+  type: pickle.PickleDataset
+  filepath: data/06_models/xgboost_model.pkl
+
+# Model predictions
+random_forest_predictions_test:
+  type: pandas.ParquetDataset
+  filepath: data/07_model_output/random_forest_predictions_test.parquet
+random_forest_top_10_predictions:
+  type: pandas.ParquetDataset
+  filepath: data/07_model_output/random_forest_top_10_predictions.parquet
+logistic_predictions_test:
+  type: pandas.ParquetDataset
+  filepath: data/07_model_output/logistic_predictions_test.parquet
+logistic_top_10_predictions:
+  type: pandas.ParquetDataset
+  filepath: data/07_model_output/logistic_top_10_predictions.parquet
+lightgbm_predictions_test:
+  type: pandas.ParquetDataset
+  filepath: data/07_model_output/lightgbm_predictions_test.parquet
+lightgbm_top_10_predictions:
+  type: pandas.ParquetDataset
+  filepath: data/07_model_output/lightgbm_top_10_predictions.parquet
+xgboost_predictions_test:
+  type: pandas.ParquetDataset
+  filepath: data/07_model_output/xgboost_predictions_test.parquet
+xgboost_top_10_predictions:
+  type: pandas.ParquetDataset
+  filepath: data/07_model_output/xgboost_top_10_predictions.parquet
+
+# Model metrics
+random_forest_model_metrics:
+  type: json.JSONDataset
+  filepath: data/08_reporting/random_forest_model_metrics.json
+logistic_model_metrics:
+  type: json.JSONDataset
+  filepath: data/08_reporting/logistic_model_metrics.json
+lightgbm_model_metrics:
+  type: json.JSONDataset
+  filepath: data/08_reporting/lightgbm_model_metrics.json
+xgboost_model_metrics:
+  type: json.JSONDataset
+  filepath: data/08_reporting/xgboost_model_metrics.json

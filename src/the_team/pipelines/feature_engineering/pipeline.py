@@ -40,13 +40,14 @@ def create_pipeline(**kwargs) -> Pipeline:
         ),
         node(
             func=create_transaction_features,
-            inputs=[
-                "clean_orders",
-                "clean_items",
-                "clean_payments",
-                "mega_id_labels"
-            ],
+            inputs=["clean_orders","clean_items","clean_payments","mega_id_labels"],
             outputs="transaction_features",
             name="create_transaction_features_node"
+        ),
+        node(
+            func=merge_model_inputs,
+            inputs=["transaction_features", "product_features", "review_features", "distance_seller_stats"],
+            outputs="model_inputs",
+            name="merge_model_inputs_node"
         ),
     ])
