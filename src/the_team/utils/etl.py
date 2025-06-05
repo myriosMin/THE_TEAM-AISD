@@ -9,6 +9,7 @@ import seaborn as sns
 import numpy as np
 from typing import Optional, Union
 from unidecode import unidecode
+import json
 import logging
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(levelname)s - %(message)s')
@@ -271,3 +272,18 @@ def clip_datetime(col: pd.Series, start_year:int = 2016, end_year:int = 2018) ->
         col = to_datetime(col)
     mask = (col.dt.year >= start_year) & (col.dt.year <= end_year)
     return col[mask]
+
+def load_model_metrics(path):
+    """
+    Load model metrics from a JSON file.
+    
+    Parameters:
+    path (Path): Path to the JSON file containing model metrics.
+    
+    Returns:
+    dict: Dictionary containing model metrics.
+    """
+    with open(path, "r") as f:
+        data = json.load(f)
+        print("Available metrics:", list(data.keys()))
+        return data
