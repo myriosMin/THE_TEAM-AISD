@@ -85,6 +85,12 @@ distance_seller_stats:
 model_inputs:
   type: pandas.ParquetDataset
   filepath: data/05_model_input/model_inputs.parquet
+pseudo_labeled_data:
+  type: pandas.ParquetDataset
+  filepath: data/05_model_input/pseudo_labeled_data.parquet
+weak_positive_mask:
+  type: pandas.ParquetDataset
+  filepath: data/05_model_input/weak_positive_mask.parquet
 
 # Saved models
 trained_random_forest_model:
@@ -102,6 +108,9 @@ trained_xgboost_model:
 best_logistic_model:
   type: pickle.PickleDataset
   filepath: data/06_models/best_logistic_model.pkl
+trained_ssl_logistic_model:
+  type: pickle.PickleDataset
+  filepath: data/06_models/trained_ssl_logistic_model.pkl
 
 # Model predictions
 random_forest_predictions_test:
@@ -134,6 +143,12 @@ logistic_predictions_test_tuning:
 logistic_top_10_predictions_tuning:
   type: pandas.ParquetDataset
   filepath: data/07_model_output/logistic_top_10_predictions_tuning.parquet
+ssl_logistic_predictions_test:
+  type: pandas.ParquetDataset
+  filepath: data/07_model_output/ssl_logistic_predictions_test.parquet
+ssl_logistic_top_10_predictions:
+  type: pandas.ParquetDataset
+  filepath: data/07_model_output/ssl_logistic_top_10_predictions.parquet
 
 # Model metrics
 random_forest_model_metrics:
@@ -151,4 +166,10 @@ xgboost_model_metrics:
 logistic_model_tuning_metrics:
   type: json.JSONDataset
   filepath: data/08_reporting/logistic_model_tuning_metrics.json
+ssl_bias_report:
+  type: pandas.CSVDataset
+  filepath: data/08_reporting/ssl_bias_report.csv
+ssl_logistic_model_metrics:
+  type: json.JSONDataset
+  filepath: data/08_reporting/ssl_logistic_model_metrics.json
 

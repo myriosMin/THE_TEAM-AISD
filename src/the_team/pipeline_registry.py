@@ -1,7 +1,7 @@
 """Project pipelines."""
 
 from kedro.pipeline import Pipeline
-from the_team.pipelines import data_engineering, feature_engineering, modelling, tuning
+from the_team.pipelines import data_engineering, feature_engineering, modelling, tuning, semi_supervised
 
 def register_pipelines() -> dict[str, Pipeline]:
     """Manually register the project's pipelines."""
@@ -9,6 +9,7 @@ def register_pipelines() -> dict[str, Pipeline]:
     fe_pipeline = feature_engineering.create_pipeline()
     m_pipeline = modelling.create_pipeline()
     tu_pipeline = tuning.create_pipeline()
+    ss_pipeline = semi_supervised.create_pipeline()
 
     return {
         "__default__": de_pipeline + fe_pipeline + m_pipeline,
@@ -16,4 +17,6 @@ def register_pipelines() -> dict[str, Pipeline]:
         "feature_engineering": fe_pipeline,
         "modelling": m_pipeline,
         "tuning": tu_pipeline,
+        "semi_supervised": ss_pipeline,
+        
     }
