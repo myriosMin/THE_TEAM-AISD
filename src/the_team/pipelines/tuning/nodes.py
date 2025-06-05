@@ -61,7 +61,7 @@ def tune_logistic_model(
 
     # Find optimal threshold via F1
     precision, recall, thresholds = precision_recall_curve(y_test, y_proba)
-    f1_scores = 2 * precision * recall / (precision + recall + 1e-10)
+    f1_scores = 2 * precision[:-1] * recall[:-1] / (precision[:-1] + recall[:-1] + 1e-10)
     best_idx = np.argmax(f1_scores)
     best_threshold = thresholds[best_idx]
     y_pred = (y_proba >= best_threshold).astype(int)
