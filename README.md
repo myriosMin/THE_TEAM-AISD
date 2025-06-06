@@ -2,8 +2,6 @@
 
 [![Powered by Kedro](https://img.shields.io/badge/powered_by-kedro-ffc900?logo=kedro)](https://kedro.org)
 
----
-
 ## 🔧 Setup Instructions for THE\_TEAM-AISD (Kedro + Spark Project)
 
 ### 🚨 Prerequisites
@@ -50,6 +48,14 @@ docker-compose run runner
 ```
 
 * This runs `run.sh` inside the container.
+
+> ⚠️ If you are on Windows, make sure `run.sh` uses Unix-style LF line endings:
+>
+> 1. Open `run.sh` in **Visual Studio Code**
+> 2. Look at the bottom-right corner — if it says `CRLF`, click on it.
+> 3. Choose `LF` and save the file (`Ctrl + S`).
+>
+> This prevents `exec format error` inside Docker containers.
 
 ---
 
