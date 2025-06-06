@@ -1,0 +1,19 @@
+version: "3.9"
+services:
+  jupyter:
+    build:
+      context: .
+      target: runtime-environment
+    ports:
+      - "8888:8888"
+    volumes:
+      - .:/home/kedro_docker
+    container_name: kedro_jupyter
+
+  runner:
+    build:
+      context: .
+      target: runner
+    volumes:
+      - .:/home/kedro_docker
+    container_name: kedro_runner

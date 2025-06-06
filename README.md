@@ -13,69 +13,93 @@
 
 ---
 
-### 🛠️ How to Build the Docker Image
+### 🛠️ Build and Start the Project with Docker Compose
 
-1. Open your terminal in the folder containing the `Dockerfile`.
-2. Run the following command:
-
-   ```bash
-   docker build -t <Image name> .
-   ```
-
----
-
-### ▶️ How to Start the Container
-
-Run the following command in your terminal:
+#### 1. Clone the repository
 
 ```bash
-docker run -p 8888:8888 <Image name>
+git clone https://github.com/myriosMin/THE_TEAM-AISD
+cd THE_TEAM-AISD
 ```
 
-* This will start **JupyterLab** inside the container.
-* Look for a URL in the terminal like:
+#### 2. Build the containers
 
-  ```
-  http://127.0.0.1:8888/lab?token=your_token_here
-  ```
-* Open this link in your browser to access the Jupyter environment.
+```bash
+docker-compose build
+```
+
+> ⏳ This may take several minutes (~15 mins) during the first run (due to package downloads).
 
 ---
 
-### 📓 Running the Project Pipeline in Jupyter
+### ▶️ Start JupyterLab
 
-Once JupyterLab is open:
+```bash
+docker-compose up jupyter
+```
 
-1. Navigate to the `notebooks/` directory.
+* Open the provided link from the terminal (e.g. `http://localhost:8888/?token=...`)
+* Use this environment to open `eda.ipynb`, run cells, or explore Kedro outputs
 
-2. Open your `.ipynb` file (or create a new notebook).
+---
 
-3. Add the following in a cell to run the pipeline:
+### 🛠️ Run the Kedro Pipeline (without Jupyter)
 
-   ```python
-   !chmod +x run.sh
-   !./run.sh
+```bash
+docker-compose run runner
+```
+
+* This runs `run.sh` inside the container.
+
+---
+
+### 📒 Alternative: Run Pipeline via Jupyter Terminal
+
+1. Inside JupyterLab, go to the top menu bar and click:
+   **File > New > Terminal**
+
+2. In the new terminal window, run:
+
+   ```bash
+   kedro run
    ```
 
-4. Run the cell — this will execute the full Kedro pipeline via `run.sh`.
+> ⏳ **Note**: The **first run may take \~15 minutes** due to downloading and installing dependencies.
+> Subsequent runs will be significantly faster thanks to Docker layer caching and existing compiled packages.
 
 ---
 
-### 📁 Note on Project Files
+### 📃 Notes
 
-* The container automatically **clones the GitHub repo** inside `/home/kedro_docker`.
-* All data folders (`data/01_raw`, etc.) will be created on first run by the pipeline if not already present.
-* Jupyter runs as the `kedro_docker` user and handles file permissions internally.
+* The container automatically clones the GitHub repo inside `/home/kedro_docker`.
+* All necessary packages (e.g. PySpark, Kedro, Torch, etc.) are installed.
+* Runs as `kedro_docker` user with proper permissions.
+* Make sure `run.sh` is executable:
+
+  ```bash
+  git update-index --chmod=+x run.sh
+  ```
 
 ---
 
 ### ✅ Summary of Docker Commands
 
-| Step          | Command                                        |
-| ------------- | ---------------------------------------------- |
-| Build image   | `docker build -t kedro-spark-notebook .`       |
-| Run container | `docker run -p 8888:8888 kedro-spark-notebook` |
-| Run pipeline  | Use `!./run.sh` inside Jupyter notebook        |
+| Step               | Command                     |
+| ------------------ | --------------------------- |
+| Build containers   | `docker-compose build`      |
+| Start JupyterLab   | `docker-compose up jupyter` |
+| Run Kedro pipeline | `docker-compose run runner` |
+
+---
+
+### 🔎 Troubleshooting
+
+* If you get `exec format error`, ensure:
+
+  * `run.sh` has LF line endings
+  * Starts with: `#!/bin/bash`
+
+* If Jupyter doesn’t open, try copying the full URL with token from terminal.
 
 ---
 
