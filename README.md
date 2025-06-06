@@ -2,8 +2,6 @@
 
 [![Powered by Kedro](https://img.shields.io/badge/powered_by-kedro-ffc900?logo=kedro)](https://kedro.org)
 
----
-
 ## 🔧 Setup Instructions for THE\_TEAM-AISD (Kedro + Spark Project)
 
 ### 🚨 Prerequisites
@@ -28,7 +26,7 @@ cd THE_TEAM-AISD
 docker-compose build
 ```
 
-> ⏳ This may take several minutes (~15 mins) during the first run (due to package downloads).
+> ⏳ This may take several minutes (\~15 mins) during the first run (due to package downloads).
 
 ---
 
@@ -82,6 +80,19 @@ docker-compose run runner
 
 ---
 
+### 🔍 How to Set LF Line Endings in VS Code
+
+If you're on Windows, you need to ensure `run.sh` uses Unix-style LF line endings:
+
+1. Open `run.sh` in **Visual Studio Code**
+2. Look at the bottom-right corner of the window. If it says `CRLF`, click on it.
+3. Select `LF` from the dropdown that appears.
+4. Save the file (`Ctrl + S`).
+
+This avoids errors like `exec format error` inside Docker containers.
+
+---
+
 ### ✅ Summary of Docker Commands
 
 | Step               | Command                     |
@@ -102,6 +113,7 @@ docker-compose run runner
 * If Jupyter doesn’t open, try copying the full URL with token from terminal.
 
 ---
+
 
 ## Overview
 
