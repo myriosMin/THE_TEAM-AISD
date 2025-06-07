@@ -92,6 +92,25 @@ weak_positive_mask:
   type: pandas.ParquetDataset
   filepath: data/05_model_input/weak_positive_mask.parquet
 
+# Temp memory datasets
+# These datasets are used for intermediate processing steps and do not persist to disk
+X_train:
+  type: MemoryDataset
+X_test:
+  type: MemoryDataset
+y_train:
+  type: MemoryDataset
+y_test:
+  type: MemoryDataset
+preprocessor_unfitted:
+  type: MemoryDataset
+preprocessor:
+  type: MemoryDataset
+X_train_transformed:
+  type: MemoryDataset
+X_test_transformed:
+  type: MemoryDataset
+
 # Saved models
 trained_random_forest_model:
   type: pickle.PickleDataset
@@ -111,6 +130,9 @@ best_logistic_model:
 trained_ssl_logistic_model:
   type: pickle.PickleDataset
   filepath: data/06_models/trained_ssl_logistic_model.pkl
+train_columns:
+  type: pickle.PickleDataset
+  filepath: data/06_models/train_columns.pkl
 
 # Model predictions
 random_forest_predictions_test:

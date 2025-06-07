@@ -11,10 +11,11 @@ def create_pipeline(**kwargs) -> Pipeline:
             node(
             func=train_random_forest_model,
             inputs=[
-                "model_inputs",
-                "params:split.test_size",
-                "params:split.stratify",
-                "params:split.random_state",
+                "X_train_transformed",
+                "X_test_transformed",
+                "y_train",
+                "y_test",
+                "params:general.random_state",
                 "params:random_forest.n_estimators",
                 "params:random_forest.max_depth",
                 "params:random_forest.class_weight",
@@ -31,10 +32,10 @@ def create_pipeline(**kwargs) -> Pipeline:
         node(
             func=train_logistic_model,
             inputs=[
-                "model_inputs",
-                "params:split.test_size",
-                "params:split.stratify",
-                "params:split.random_state",
+                "X_train_transformed",
+                "X_test_transformed",
+                "y_train",
+                "y_test",
                 "params:logistic_regression.C",
                 "params:logistic_regression.max_iter",
                 "params:logistic_regression.solver",
@@ -52,10 +53,11 @@ def create_pipeline(**kwargs) -> Pipeline:
         node(
             func=train_lightgbm_model,
             inputs=[
-                "model_inputs",
-                "params:split.test_size",
-                "params:split.stratify",
-                "params:split.random_state",
+                "X_train_transformed",
+                "X_test_transformed",
+                "y_train",
+                "y_test",
+                "params:general.random_state",
                 "params:lightgbm.n_estimators",
                 "params:lightgbm.learning_rate",
                 "params:lightgbm.max_depth",
@@ -73,10 +75,11 @@ def create_pipeline(**kwargs) -> Pipeline:
         node(
             func=train_xgboost_model,
             inputs=[
-                "model_inputs",
-                "params:split.test_size",
-                "params:split.stratify",
-                "params:split.random_state",
+                "X_train_transformed",
+                "X_test_transformed",
+                "y_train",
+                "y_test",
+                "params:general.random_state",
                 "params:xgboost.n_estimators",
                 "params:xgboost.learning_rate",
                 "params:xgboost.max_depth",

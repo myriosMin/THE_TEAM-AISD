@@ -10,40 +10,29 @@ from sklearn.preprocessing import StandardScaler, OneHotEncoder
 from sklearn.metrics import precision_recall_curve, roc_auc_score, classification_report, auc
 import pandas as pd
 import numpy as np
+from logging import getLogger
+logger = getLogger(__name__)
 
 def tune_logistic_model(
-    data: pd.DataFrame,
+    X_train: pd.DataFrame,            
+    X_test: pd.DataFrame,             
+    y_train: pd.Series,            
+    y_test: pd.Series,   
     tuning_params: dict,
-    test_size: float,
-    stratify: bool,
-    random_state: int
 ) -> tuple:
-
-    X = data.drop(columns=["is_repeat_buyer"])
-    y = data["is_repeat_buyer"]
-    stratify_obj = y if stratify else None
-
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=test_size, stratify=stratify_obj, random_state=random_state
-    )
-
-    numeric_features = [
-        'deli_duration_exp', 'deli_duration_paid', 'deli_cost', 'item_price', 'total_spent',
-        'installment', 'distance_km', 'high_density_customer_area', 'seller_repeat_buyer_rate',
-        'review_score', 'product_name_length', 'product_description_length',
-        'product_photos_qty', 'product_weight_g', 'product_length_cm',
-        'product_height_cm', 'product_width_cm'
-    ]
-    payment_features = ['credit_card', 'voucher', 'debit_card', 'boleto']
-    cat_features = ['product_category_name']
-
-    preprocessor = ColumnTransformer(transformers=[
-        ('num', StandardScaler(), numeric_features + payment_features),
-        ('cat', OneHotEncoder(handle_unknown='ignore'), cat_features)
-    ], remainder='passthrough')
-
+    """
+    Tune a logistic regression model using GridSearchCV and find the best threshold based on F1 score.
+    Args:
+        X_train (pd.DataFrame): Training features.
+        X_test (pd.DataFrame): Testing features.
+        y_train (pd.Series): Training target variable.
+        y_test (pd.Series): Testing target variable.
+        tuning_params (dict): Parameters for tuning the logistic regression model.
+    Returns:
+        tuple: Best model, metrics dictionary, predictions DataFrame, and top 10 predictions DataFrame.
+    """
+    logger.info("Starting logistic regression model tuning.")
     pipeline = Pipeline([
-        ('preprocessor', preprocessor),
         ('classifier', LogisticRegression())
     ])
 
@@ -86,5 +75,10 @@ def tune_logistic_model(
             "recall": recall.tolist()
         }
     }
-
+    logger.info("Logistic regression model tuning completed.")
+    logger.info(f"Best parameters: {search.best_params_}")
+    logger.info(f"Best threshold: {best_threshold}")
+    logger.info(f"PRC AUC: {metrics['prc_auc']}")
+    logger.info(f"Top 10 precision: {metrics['top_10_precision']}")
+    logger.info(f"Classification report: {metrics['classification_report']}")
     return best_model, metrics, predictions_df, top_10_df

@@ -3,16 +3,14 @@
 #
 # Documentation for this file format can be found in "Parameters"
 # Link: https://docs.kedro.org/en/0.19.12/configuration/parameters.html
-split:
-  test_size: 0.2
-  stratify: True
+general:
   random_state: 42
 
 skip:
-  skip_random_forest: True
-  skip_logistic: True
-  skip_lightgbm: True
-  skip_xgboost: True
+  skip_random_forest: False
+  skip_logistic: False
+  skip_lightgbm: False
+  skip_xgboost: False
 
 random_forest:
   n_estimators: 100

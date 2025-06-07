@@ -1,0 +1,36 @@
+# This is a boilerplate parameters config generated for pipeline 'preprocessing'
+# using Kedro 0.19.12.
+#
+# Documentation for this file format can be found in "Parameters"
+# Link: https://docs.kedro.org/en/0.19.12/configuration/parameters.html
+test_size: 0.2
+stratify: True
+random_state: 42
+
+numeric_features:
+  - deli_duration_exp
+  - deli_duration_paid
+  - deli_cost
+  - item_price
+  - total_spent
+  - installment
+  - distance_km
+  - high_density_customer_area
+  - seller_repeat_buyer_rate
+  - review_score
+  - product_name_length
+  - product_description_length
+  - product_photos_qty
+  - product_weight_g
+  - product_length_cm
+  - product_height_cm
+  - product_width_cm
+
+payment_features:
+  - credit_card
+  - voucher
+  - debit_card
+  - boleto
+
+cat_features:
+  - product_category_name

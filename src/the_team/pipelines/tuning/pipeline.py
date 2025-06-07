@@ -11,11 +11,11 @@ def create_pipeline(**kwargs) -> Pipeline:
         node(
             func=tune_logistic_model,
             inputs=[
-                "model_inputs",
+                "X_train_transformed",
+                "X_test_transformed",
+                "y_train",
+                "y_test",
                 "params:logistic_tuning",
-                "params:split.test_size",
-                "params:split.stratify",
-                "params:split.random_state"
             ],
             outputs=[
                 "best_logistic_model",

@@ -18,60 +18,10 @@ from xgboost import XGBClassifier
 import logging
 logger = logging.getLogger(__name__)
 
-# constants
-NUMERIC_FEATURES = [
-    'deli_duration_exp', 'deli_duration_paid', 'deli_cost', 'item_price', 'total_spent',
-    'installment', 'distance_km', 'high_density_customer_area', 'seller_repeat_buyer_rate',
-    'review_score', 'product_name_length', 'product_description_length',
-    'product_photos_qty', 'product_weight_g', 'product_length_cm',
-    'product_height_cm', 'product_width_cm'
-]
-PAYMENT_FEATURES = ['credit_card', 'voucher', 'debit_card', 'boleto']
-CAT_FEATURES     = ['product_category_name']
-
 # Create dummy model and fit minimal data when skipping certain models
 dummy_model = DummyClassifier(strategy="most_frequent")
 dummy_model.fit([[0]], [0])  # type: ignore # Minimal valid fit
-
 dummy_metrics = {"skipped": True}
-
-# Create a common preprocessor for the data
-def make_preprocessor():
-    """
-    Create a preprocessor for the dataset that scales numeric features and one-hot encodes categorical features.
-    Returns:
-        ColumnTransformer: A transformer that applies StandardScaler to numeric features and OneHotEncoder to categorical features.
-    """
-    return ColumnTransformer(
-        transformers=[
-            ('num', StandardScaler(), NUMERIC_FEATURES + PAYMENT_FEATURES),
-            ('cat', OneHotEncoder(handle_unknown='ignore'), CAT_FEATURES)
-        ],
-        remainder='passthrough'
-    )
-
-# Function to split data into training and testing sets
-def split_data(df, test_size, stratify, random_state):
-    """
-    Split the dataset into training and testing sets.
-    Args:
-        df (pd.DataFrame): The input DataFrame containing features and target variable.
-        test_size (float): Proportion of the dataset to include in the test split.
-        stratify (bool): Whether to stratify the split based on the target variable.
-        random_state (int): Random seed for reproducibility.
-    Returns:
-        tuple: A tuple containing the training features, testing features, training target, and testing target.
-    """
-    if "is_repeat_buyer" not in df.columns:
-        raise ValueError("DataFrame must contain 'is_repeat_buyer' column for target variable.")
-    if df.empty:
-        raise ValueError("DataFrame is empty. Cannot perform train-test split.")
-    X = df.drop(columns=["is_repeat_buyer"])
-    y = df["is_repeat_buyer"]
-    stratify_obj = y if stratify else None
-    return train_test_split(X, y, test_size=test_size,
-                            stratify=stratify_obj,
-                            random_state=random_state)
     
 # Function to collect evaluation metrics and predictions
 def evaluate_predictions(y_test, y_proba, y_pred, X_test):
@@ -117,12 +67,12 @@ def evaluate_predictions(y_test, y_proba, y_pred, X_test):
     }, df, top_df
 
 def train_model(
-    data: pd.DataFrame,
+    X_train: pd.DataFrame,            
+    X_test: pd.DataFrame,             
+    y_train: pd.Series,            
+    y_test: pd.Series,      
     clf_builder,    # a callable that returns an instantiated estimator
     params: dict,   # hyperparams for that classifier
-    test_size: float,
-    stratify: bool,
-    random_state: int,
     skip: bool,
     use_feature_importance: bool = True,
     model_name: str = "default_model"  # name for logging purposes
@@ -135,15 +85,9 @@ def train_model(
         logger.info("Skipping %s model training", model_name)
         return dummy_model, dummy_metrics, pd.DataFrame(), pd.DataFrame()
     logger.info("Training %s model", model_name)
-    
-    # 1) split
-    X_train, X_test, y_train, y_test = split_data(
-        data, test_size, stratify, random_state
-    )
 
     # 2) build pipeline
     pipe = Pipeline([
-        ('preprocessor', make_preprocessor()),
         ('classifier', clf_builder(**params))
     ])
 
@@ -158,13 +102,13 @@ def train_model(
     )
 
     if use_feature_importance:
-        feat_names = pipe.named_steps['preprocessor'].get_feature_names_out()
         clf = pipe.named_steps['classifier']
         if hasattr(clf, 'feature_importances_'):
             imps = clf.feature_importances_
         else:
             # e.g. logistic: absolute coef
             imps = np.abs(clf.coef_[0])
+        feat_names = X_test.columns
         metrics["feature_importance"] = {
             name: float(score)
             for name, score in sorted(
@@ -179,8 +123,16 @@ def train_model(
 
     return pipe, metrics, pred_df, top_df
 
-def train_random_forest_model(data, test_size, stratify, random_state,
-                              n_estimators, max_depth, class_weight, skip):
+def train_random_forest_model(X_train: pd.DataFrame, 
+                            X_test: pd.DataFrame, 
+                            y_train: pd.Series, 
+                            y_test: pd.Series, 
+                            random_state: int,             
+                            n_estimators: int, 
+                            max_depth: int, 
+                            class_weight: str, 
+                            skip: bool):
+
     """
     Train a Random Forest model to predict repeat buyers.
     Args:
@@ -196,14 +148,21 @@ def train_random_forest_model(data, test_size, stratify, random_state,
         tuple: A tuple containing the trained model, metrics, predictions DataFrame, and top 10% predictions DataFrame.
     """
     return train_model(
-        data,
+        X_train, X_test, y_train, y_test,
         clf_builder=lambda **p: RandomForestClassifier(random_state=random_state, **p, n_jobs=-1),
         params={"n_estimators": n_estimators, "max_depth": max_depth, "class_weight": class_weight},
-        test_size=test_size, stratify=stratify, random_state=random_state, skip=skip, model_name="RandomForest"
+        skip=skip, model_name="RandomForest"
     )
 
-def train_logistic_model(data, test_size, stratify, random_state,
-                         C, max_iter, solver, class_weight, skip):
+def train_logistic_model(X_train: pd.DataFrame, 
+                        X_test: pd.DataFrame, 
+                        y_train: pd.Series, 
+                        y_test: pd.Series,                      
+                        C: float, 
+                        max_iter: int,
+                        solver: str, 
+                        class_weight: str, 
+                        skip: bool):
     """
     Train a logistic regression model to predict repeat buyers.
     Args:
@@ -220,14 +179,22 @@ def train_logistic_model(data, test_size, stratify, random_state,
         tuple: A tuple containing the trained model, metrics, predictions DataFrame, and top 10% predictions DataFrame.
     """
     return train_model(
-        data,
-        clf_builder=lambda **p: LogisticRegression(class_weight=class_weight, solver=solver, max_iter=max_iter, **p),
+        X_train, X_test, y_train, y_test,
+        clf_builder=lambda **p: LogisticRegression(class_weight=class_weight, solver=solver, max_iter=max_iter, **p), # type: ignore
         params={"C": C},
-        test_size=test_size, stratify=stratify, random_state=random_state, skip=skip, model_name="LogisticRegression"
+        skip=skip, model_name="LogisticRegression"
     )
 
-def train_lightgbm_model(data, test_size, stratify, random_state,
-                         n_estimators, learning_rate, max_depth, scale_pos_weight, skip):
+def train_lightgbm_model(X_train: pd.DataFrame, 
+                        X_test: pd.DataFrame, 
+                        y_train: pd.Series, 
+                        y_test: pd.Series, 
+                        random_state: int,                 
+                        n_estimators: int, 
+                        learning_rate: float, 
+                        max_depth: int, 
+                        scale_pos_weight: float, 
+                        skip: bool):
     """
     Train a LightGBM model to predict repeat buyers.
 
@@ -246,7 +213,7 @@ def train_lightgbm_model(data, test_size, stratify, random_state,
         tuple: A tuple containing the trained model, metrics, predictions DataFrame, and top 10% predictions DataFrame.
     """
     return train_model(
-        data,
+        X_train, X_test, y_train, y_test,
         clf_builder=lambda **p: LGBMClassifier(random_state=random_state, **p),
         params={
             "n_estimators": n_estimators,
@@ -254,11 +221,19 @@ def train_lightgbm_model(data, test_size, stratify, random_state,
             "max_depth": max_depth,
             "scale_pos_weight": scale_pos_weight
         },
-        test_size=test_size, stratify=stratify, random_state=random_state, skip=skip, model_name="LightGBM"
+        skip=skip, model_name="LightGBM"
     )
 
-def train_xgboost_model(data, test_size, stratify, random_state,
-                        n_estimators, learning_rate, max_depth, scale_pos_weight, skip):
+def train_xgboost_model(X_train: pd.DataFrame, 
+                        X_test: pd.DataFrame, 
+                        y_train: pd.Series, 
+                        y_test: pd.Series, 
+                        random_state: int,                       
+                        n_estimators: int, 
+                        learning_rate: float, 
+                        max_depth: int, 
+                        scale_pos_weight: float, 
+                        skip: bool):
     """
     Train an XGBoost model to predict repeat buyers.
     Args:
@@ -275,7 +250,7 @@ def train_xgboost_model(data, test_size, stratify, random_state,
         tuple: A tuple containing the trained model, metrics, predictions DataFrame, and top 10% predictions DataFrame.
     """
     return train_model(
-        data,
+        X_train, X_test, y_train, y_test, 
         clf_builder=lambda **p: XGBClassifier(
             random_state=random_state, use_label_encoder=False, eval_metric="logloss", **p
         ),
@@ -285,5 +260,5 @@ def train_xgboost_model(data, test_size, stratify, random_state,
             "max_depth": max_depth,
             "scale_pos_weight": scale_pos_weight
         },
-        test_size=test_size, stratify=stratify, random_state=random_state, skip=skip, model_name="XGBoost"
+        skip=skip, model_name="XGBoost"
     )
