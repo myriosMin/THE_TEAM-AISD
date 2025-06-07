@@ -3,3 +3,21 @@
 #
 # Documentation for this file format can be found in "Parameters"
 # Link: https://docs.kedro.org/en/0.19.12/configuration/parameters.html
+orders:
+  date_cols : [
+        "order_purchase_timestamp",
+        "order_approved_at",
+        "order_delivered_carrier_date",
+        "order_delivered_customer_date",
+        "order_estimated_delivery_date"
+  ]
+  to_drop: ["order_delivered_carrier_date"]
+
+items:
+  to_drop: ["shipping_limit_date"]
+  to_cap: ["price", "freight_value"]
+  upper_cap_value: 99.9
+
+payments:
+  to_drop: ["payment_sequential"]
+  drop_payment_type: "not_defined"

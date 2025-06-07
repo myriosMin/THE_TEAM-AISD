@@ -9,10 +9,10 @@ split:
   random_state: 42
 
 skip:
-  skip_random_forest: False
-  skip_logistic: False
-  skip_lightgbm: False
-  skip_xgboost: False
+  skip_random_forest: True
+  skip_logistic: True
+  skip_lightgbm: True
+  skip_xgboost: True
 
 random_forest:
   n_estimators: 100
