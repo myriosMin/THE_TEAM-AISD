@@ -14,6 +14,9 @@ from sklearn.metrics import (
 from sklearn.model_selection import train_test_split
 import numpy as np
 import pandas as pd
+from logging import getLogger
+logger = getLogger(__name__)
+
 def define_weak_positive_criteria(df: pd.DataFrame) -> pd.DataFrame:
     """
     Define business logic for weak positive labeling.
@@ -43,7 +46,10 @@ def define_weak_positive_criteria(df: pd.DataFrame) -> pd.DataFrame:
     return pd.DataFrame({"weak_positive": mask})
 
 def generate_pseudo_labels(
-    model, X_unlabeled: pd.DataFrame, weak_criteria_df: pd.DataFrame
+    model,
+    X_unlabeled: pd.DataFrame,
+    weak_criteria_df: pd.DataFrame,
+    train_columns: list[str],
 ) -> pd.DataFrame:
     """
     Assign pseudo-labels using model predictions + business criteria for confident positive examples.
@@ -56,9 +62,19 @@ def generate_pseudo_labels(
     Returns:
         pd.DataFrame: Unlabeled features with pseudo-label column.
     """
-    weak_criteria = weak_criteria_df["weak_positive"]
-    preds = model.predict_proba(X_unlabeled)[:, 1]
-    pseudo_labels = (preds > 0.8) | weak_criteria
+    # Dummy-encode
+    X_dummies = pd.get_dummies(X_unlabeled)
+
+    # Align to training columns (fills any missing dummies with 0; drops extras)
+    X_aligned = X_dummies.reindex(columns=train_columns, fill_value=0)
+
+    # Get model probabilities
+    preds = model.predict_proba(X_aligned)[:, 1]
+
+    # Combine with your weak-positive mask
+    weak_mask = weak_criteria_df["weak_positive"]
+    pseudo_labels = (preds > 0.8) | weak_mask
+
     return X_unlabeled.assign(is_repeat_buyer=pseudo_labels.astype(int))
 
 def retrain_model_with_pseudo_labels(df: pd.DataFrame) -> Tuple[Pipeline, dict, pd.DataFrame, pd.DataFrame]:
@@ -71,6 +87,7 @@ def retrain_model_with_pseudo_labels(df: pd.DataFrame) -> Tuple[Pipeline, dict, 
     Returns:
         model, metrics, full_predictions_df, top_10_df
     """
+    logger.info("Retraining logistic regression model with pseudo-labeled data.")
     X = df.drop(columns=["is_repeat_buyer"])
     y = df["is_repeat_buyer"]
 
@@ -126,7 +143,11 @@ def retrain_model_with_pseudo_labels(df: pd.DataFrame) -> Tuple[Pipeline, dict, 
             "recall": recall.tolist()
         }
     }
-
+    logger.info("Model retraining complete with pseudo-labels.")
+    logger.info(f"Best threshold found: {best_threshold:.4f}")
+    logger.info(f"PRC AUC: {metrics['prc_auc']:.4f}")
+    logger.info(f"Top 10 precision: {metrics['top_10_precision']:.4f}")
+    logger.info(f"Classification report:\n{metrics['classification_report']}")
     return pipeline, metrics, predictions_df, top_10_df
 
 def analyze_ssl_bias(pseudo_labeled_df: pd.DataFrame) -> pd.DataFrame:
@@ -140,6 +161,7 @@ def analyze_ssl_bias(pseudo_labeled_df: pd.DataFrame) -> pd.DataFrame:
     Returns:
         pd.DataFrame: Summary statistics on how many pseudo-labeled positives came from top categories.
     """
+    logger.info("Analyzing pseudo-labeled data for potential bias in top categories.")
     # Get top 10 product categories in overall data
     top_categories = (
         pseudo_labeled_df["product_category_name"]
@@ -149,8 +171,7 @@ def analyze_ssl_bias(pseudo_labeled_df: pd.DataFrame) -> pd.DataFrame:
         .tolist()
     )
 
-    # Filter pseudo-labeled positives (label = 1, but were previously unlabeled if you tracked that)
-    # Assuming you didn’t track previous labels, fallback: count all label == 1 cases
+    # Filter pseudo-labeled positives 
     positives = pseudo_labeled_df[pseudo_labeled_df["is_repeat_buyer"] == 1]
 
     # Count how many came from top categories
@@ -166,5 +187,7 @@ def analyze_ssl_bias(pseudo_labeled_df: pd.DataFrame) -> pd.DataFrame:
         "positives_from_top_categories": [top_cat_counts],
         "percentage_top_category": [round(percent_top_category * 100, 2)]
     })
-
+    logger.info(f"Analysis complete: {result.to_dict(orient='records')}")
+    logger.info(f"Total pseudo positives: {total_positives}, from top categories: {top_cat_counts}, "
+                f"percentage: {percent_top_category:.2%}")
     return result

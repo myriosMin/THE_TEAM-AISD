@@ -16,7 +16,12 @@ def create_pipeline(**kwargs) -> Pipeline:
         ),
         node(
             func=generate_pseudo_labels,
-            inputs=["best_logistic_model", "model_inputs", "weak_positive_mask"],
+            inputs=[
+                "best_logistic_model",
+                "model_inputs",
+                "weak_positive_mask",
+                "train_columns"
+            ],
             outputs="pseudo_labeled_data",
             name="generate_pseudo_labels_node"
         ),

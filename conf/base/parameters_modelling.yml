@@ -3,9 +3,7 @@
 #
 # Documentation for this file format can be found in "Parameters"
 # Link: https://docs.kedro.org/en/0.19.12/configuration/parameters.html
-split:
-  test_size: 0.2
-  stratify: True
+general:
   random_state: 42
 
 skip:

@@ -10,19 +10,19 @@ def create_pipeline(**kwargs) -> Pipeline:
     return pipeline([
         node(
             func=clean_orders_dataset,
-            inputs="orders",
+            inputs=["orders", "params:orders.date_cols", "params:orders.to_drop"],
             outputs="clean_orders",
             name="clean_orders_node"
         ), 
         node(
             func=clean_items_dataset,
-            inputs="items",
+            inputs=["items", "params:items.to_drop", "params:items.to_cap", "params:items.upper_cap_value"],
             outputs="clean_items",
             name="clean_items_node"
         ),
         node(
             func=clean_payments_dataset,
-            inputs="payments",
+            inputs=["payments", "params:payments.drop_payment_type", "params:payments.to_drop"],
             outputs="clean_payments",
             name="clean_payments_node"
         ),

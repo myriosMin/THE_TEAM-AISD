@@ -3,8 +3,11 @@ This is a boilerplate pipeline 'feature_engineering'
 generated using Kedro 0.19.12
 """
 import pandas as pd
-from pysentimiento import create_analyzer
 from haversine import haversine, Unit
+import subprocess
+import sys
+import logging
+logger = logging.getLogger(__name__)
 
 def create_transaction_features(
     clean_orders: pd.DataFrame,
@@ -19,6 +22,7 @@ def create_transaction_features(
     Returns:
         pd.DataFrame: Transaction-level features per item.
     """
+    logger.info("Creating transaction features at order-item level...")
     # Step 1: Start with item-level
     df = clean_items.copy()
 
@@ -31,7 +35,7 @@ def create_transaction_features(
         how="left"
     )
 
-    # Step 3: Add payments (grouped by order, multi-hot + breakdown)
+    # Step 3: Add payments (grouped by order, multi-hot coded + percentage breakdown)
     payment_encoded = (
         clean_payments
         .groupby(["order_id", "payment_type"])["payment_value"]
@@ -93,7 +97,7 @@ def create_transaction_features(
     df["discount"] = df["price"] < df["avg_price"]
     df.drop(columns=["avg_price"], inplace=True)
 
-    # Feature 9: Calculate total spent
+    # Feature 9: Calculate total spent per order
     payment_encoded["total_spent"] = payment_encoded.drop(columns="order_id").sum(axis=1)
 
     # Feature 10: Generate payment types and price ratios per order
@@ -101,7 +105,7 @@ def create_transaction_features(
     payment_encoded[payment_types] = payment_encoded[payment_types].div(payment_encoded["total_spent"], axis=0).fillna(0)
     df = df.merge(payment_encoded, on="order_id", how="left")
         
-    # Feature 11: Installment count
+    # Feature 11: Installment count; sum installments per order
     installment_info = (
         clean_payments
         .groupby("order_id")["payment_installments"]
@@ -126,13 +130,12 @@ def create_transaction_features(
     # Automatically include all normalized payment ratio columns
     ratio_cols = [col for col in payment_encoded.columns if col not in ["order_id"]]
 
+    logger.info(f"Transaction features created with {len(df)} rows and {len(base_cols + ratio_cols)} columns.")
+    
     # Return only non-null rows
     return df[base_cols + ratio_cols].dropna()
 
 #  Product/Review Related Nodes
-
-# calling model at module level to ensure it is called once per run
-analyzer = create_analyzer(task="sentiment", lang="pt")  # using a Portuguese model to directly analyze Portuguese
 
 # Cache dictionary to avoid redundant predictions
 sentiment_cache = {}
@@ -164,6 +167,7 @@ def heuristic_sentiment(text: str, model_sentiment: str) -> str:
     return model_sentiment
 
 def analyze_sentiment(text: str) -> str:
+    global analyzer
     if not text.strip():
         return "No comment"
     if text in sentiment_cache:
@@ -187,14 +191,25 @@ def add_verified_rating(reviews: pd.DataFrame, run_sentiment: bool = True) -> pd
     Returns:
         pd.DataFrame: Processed DataFrame with 'sentiment', 'is_verified' added, and comment column dropped
     """
+    logger.info("Adding verified rating to reviews...")
     reviews = reviews.copy()
     reviews["review_comment_message"] = reviews["review_comment_message"].fillna("").astype(str)
-
+    global analyzer # Ensure analyzer is defined globally
+    
     if not run_sentiment:
         # Skip sentiment analysis entirely
         reviews.drop(columns=["review_comment_message"], inplace=True)
         return reviews
+    
+    # Try importing pysentimiento, install it if missing
+    try:
+        from pysentimiento import create_analyzer
+    except ImportError:
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "pysentimiento>=0.3.0"])
+        from pysentimiento import create_analyzer  # re-import after install
 
+    analyzer = create_analyzer(task="sentiment", lang="pt")  # using a Portuguese model to directly analyze Portuguese
+    
     # Running sentiment analysis with caching
     reviews["sentiment"] = reviews["review_comment_message"].apply(analyze_sentiment)
 
@@ -216,6 +231,11 @@ def add_verified_rating(reviews: pd.DataFrame, run_sentiment: bool = True) -> pd
 
     # Dropping comments column
     reviews.drop(columns=["review_comment_message"], inplace=True)
+    
+    # Drop rows where 'is_verified' is None
+    reviews = reviews[reviews["is_verified"].notna()]
+    
+    logger.info(f"Processed {len(reviews)} reviews with sentiment and verification status.")
     return reviews
 
 def translate_product_categories(products: pd.DataFrame, translation: pd.DataFrame) -> pd.DataFrame:
@@ -229,12 +249,13 @@ def translate_product_categories(products: pd.DataFrame, translation: pd.DataFra
     Returns:
         pd.DataFrame: Same DataFrame with 'product_category_name' replaced in English.
     """
+    logger.info("Translating product categories to English...")
     # Create the mapping
     translation_map = translation.set_index("product_category_name")["product_category_name_english"].to_dict()
 
     # Replace in place
     products["product_category_name"] = products["product_category_name"].map(translation_map)
-
+    logger.info(f"Translated {len(products)} product categories.")
     return products
 
 def high_density_customer_flag(clean_customers: pd.DataFrame) -> pd.DataFrame:
@@ -254,7 +275,7 @@ def compute_seller_buyer_distance(
     mega_id_labels: pd.DataFrame,
 ) -> pd.DataFrame:
     """Compute distance between customer and seller for each order and merge into the main dataset."""
-
+    logger.info("Computing seller-buyer distances...")
     # Step 1: Get customer coordinates
     customers_loc = pd.merge(
         clean_customers,
@@ -314,7 +335,7 @@ def compute_seller_buyer_distance(
         how="left"
     )
     df = df.dropna(subset=["distance_km"])
-
+    logger.info(f"Computed distances for {len(df)} orders.")
     return df
 
 
@@ -328,6 +349,7 @@ def calculate_seller_repeat_buyer_rate(df: pd.DataFrame) -> pd.DataFrame:
     Returns:
         pd.DataFrame: Original DataFrame with added 'seller_repeat_buyer_rate' column.
     """
+    logger.info("Calculating seller repeat buyer rates...")
     # Step 1: Count repeat buyers per seller
     repeat_buyers = (
         df[df["is_repeat_buyer"] == True]
@@ -354,7 +376,7 @@ def calculate_seller_repeat_buyer_rate(df: pd.DataFrame) -> pd.DataFrame:
 
     # Step 4: Merge this back into main dataset
     distance_seller_stats = pd.merge(df, seller_repeat_stats[["seller_id", "seller_repeat_buyer_rate"]], on="seller_id", how="left")
-
+    logger.info(f"Calculated repeat buyer rates for {len(distance_seller_stats)} sellers.")
     return distance_seller_stats
 
 def merge_model_inputs(
@@ -375,6 +397,7 @@ def merge_model_inputs(
     Returns:
         pd.DataFrame: Merged modeling inputs with selected features
     """
+    logger.info("Merging all feature datasets into model inputs...")
     # 1. Merge seller-level distance and repeat rate features
     merged = transaction_features.merge(
         distance_seller_stats.drop(columns=["num_orders", "is_repeat_buyer"]),
@@ -391,7 +414,7 @@ def merge_model_inputs(
 
     # 3. Merge review scores
     merged = merged.merge(
-        review_features[["order_id", "review_score"]],
+        review_features,
         on="order_id",
         how="left"
     )
@@ -409,8 +432,12 @@ def merge_model_inputs(
         "product_height_cm", "product_width_cm",
         "is_repeat_buyer",
     ]
+    
+    # 5. Check if is_verfied exists in review_features; doing so will drop a lot of rows since many reviews do not have any comment to verify
+    if "is_verified" in review_features.columns:
+        final_cols.append("is_verified")
 
     # Drop missing and duplicate rows
     model_inputs = merged[final_cols].dropna().drop_duplicates()
-
+    logger.info(f"Final model inputs created with {len(model_inputs)} rows and {len(model_inputs.columns)} columns.")
     return model_inputs
